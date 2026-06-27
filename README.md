@@ -20,6 +20,24 @@
 
 ---
 
+## 📑 Contents
+
+- [🐉 About DragonClaw](#-about-dragonclaw)
+- [🔍 Feature Deep-Dive](#-feature-deep-dive)
+- [🏗️ Architecture](#%EF%B8%8F-architecture)
+- [✅ Requirements](#-requirements)
+- [🚀 Quick Start](#-quick-start)
+- [🛠️ Scripts](#%EF%B8%8F-scripts)
+- [📦 Build & Release](#-build--release)
+- [📁 Project Layout](#-project-layout)
+- [🧪 Testing](#-testing)
+- [🗺️ Roadmap](#%EF%B8%8F-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+
+---
+
 ## 🐉 About DragonClaw
 
 > **Possibly the best desktop client for OpenClaw, available today.**
