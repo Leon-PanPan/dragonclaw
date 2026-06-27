@@ -53,7 +53,7 @@ Beyond being a graphical shell for the Gateway, DragonClaw introduces a number o
 - 🌳 **Sub-tasks** — visualize sub-tasks and sub-sessions spawned by the main agent in real time.
 - 📚 **Model Configuration** — built-in support for all major providers: OpenAI, Anthropic, DeepSeek, Grok, OpenRouter, Groq, Moonshot, Alibaba, Ollama, ModelBus, custom and more.
 - 🏪 **Agent Store** — browse the online catalog, pick the right Agent and install it together with the skills it depends on, in one click.
-- 📋 **Kanban** — a task board to organize work across agents.
+- 📋 **Dashboard** — a task board to organize work across agents.
 - 📜 **Logs** — tail gateway logs directly from the app.
 - ⚙️ **Unified settings** — basics, gateway, agents, sessions, tools and security in a single pane.
 - 🔄 **Update detection** — automatically checks for updates to DragonClaw, OpenClaw, Node.js and more at startup.
@@ -165,16 +165,16 @@ Whether your OpenClaw Gateway lives on another machine on your LAN or on a remot
 
 ---
 
-### 📋 Kanban
+### 📋 Dashboard
 
-When a task needs to be split across multiple agents working in parallel, DragonClaw's **Kanban** surfaces every work item on a single task board:
+When a task needs to be split across multiple agents working in parallel, DragonClaw's **Dashboard** surfaces every work item on a single task board:
 
 - **Multi-column flow** — one column per agent, work pushes forward inside its column and cross-agent collaboration is immediately visible.
 - **Real-time refresh** — sub-tasks and sub-agents spawned by the main agent are written back to the corresponding card instantly.
 - **Status visualization** — idle, running, error and done are shown with distinct markers so bottlenecks stand out.
 - **One-click refresh** — the **Refresh** button in the header pulls the latest state on demand without waiting for a push.
 
-![Kanban](doc/assets/Board.png)
+![Dashboard](doc/assets/Board.png)
 
 ---
 

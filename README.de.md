@@ -53,7 +53,7 @@ DragonClaw ist nicht nur eine „grafische Hülle" für das Gateway, sondern bri
 - 🌳 **Teilaufgaben** — vom Hauptagenten ausgelöste Teilaufgaben und Untersitzungen in Echtzeit visualisieren.
 - 📚 **Modellkonfiguration** — OpenAI, Anthropic, DeepSeek, Grok, OpenRouter, Groq, Moonshot, Alibaba, Ollama, ModelBus, benutzerdefiniert u. v. m. bereits eingebunden.
 - 🏪 **Agents Store** — passende Agents online auswählen und gemeinsam mit den benötigten Skills mit einem Klick lokal installieren.
-- 📋 **Kanban** — Aufgaben-Board, um Arbeit über Agenten hinweg zu organisieren.
+- 📋 **Dashboard** — Aufgaben-Board, um Arbeit über Agenten hinweg zu organisieren.
 - 📜 **Logs** — Gateway-Logs in Echtzeit direkt in der App mitlesen.
 - ⚙️ **Einheitliche Einstellungen** — Grundlagen, Gateway, Agenten, Sitzungen, Werkzeuge und Sicherheit in einer einzigen Ansicht.
 - 🔄 **Update-Erkennung** — prüft beim Start automatisch DragonClaw selbst, OpenClaw, Node.js und mehr auf neue Versionen.
@@ -165,16 +165,16 @@ Egal, ob dein OpenClaw-Gateway auf einer anderen Maschine im LAN oder auf einem 
 
 ---
 
-### 📋 Kanban
+### 📋 Dashboard
 
-Wenn eine Aufgabe auf mehrere parallel arbeitende Agenten aufgeteilt werden muss, breitet DragonClaws **Kanban** alle Aufgaben auf einem einzigen Board aus:
+Wenn eine Aufgabe auf mehrere parallel arbeitende Agenten aufgeteilt werden muss, breitet DragonClaws **Dashboard** alle Aufgaben auf einem einzigen Board aus:
 
 - **Mehrspaltiger Fluss** — eine Spalte pro Agent; Aufgaben wandern innerhalb ihrer Spalte voran, und die Zusammenarbeit zwischen Agenten ist sofort sichtbar.
 - **Echtzeit-Aktualisierung** — vom Hauptagenten ausgelöste Teilaufgaben und Unteragenten werden sofort auf den entsprechenden Karten zurückgeschrieben.
 - **Status-Visualisierung** — Leerlauf, läuft, Fehler und fertig werden mit unterschiedlichen Markierungen dargestellt, sodass Engpässe sofort auffallen.
 - **Ein-Klick-Aktualisierung** — die Schaltfläche **Aktualisieren** in der Kopfzeile zieht den aktuellen Status jederzeit aktiv nach, ohne auf Push-Events zu warten.
 
-![Kanban](doc/assets/Board.png)
+![Dashboard](doc/assets/Board.png)
 
 ---
 
