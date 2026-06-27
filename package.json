@@ -3,14 +3,14 @@
   "version": "0.0.1",
   "description": "DragonClaw Agent Desktop Client for OpenClaw",
   "main": "src/main/index.js",
-  "author": "杨里卬", 
+  "author": "杨里卬",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dev": "vite --mode development",
     "build": "vite build",
     "preview": "vite preview",
-    "electron:dev": "concurrently --kill-others --success first \"npm run dev\" \"wait-on http-get://localhost:5177 --timeout 60000 --interval 1000 && electron . --dev --no-sandbox\"",
+    "electron:dev": "concurrently --kill-others --success first \"npm run dev\" \"wait-on http-get://127.0.0.1:5177 --timeout 60000 --interval 1000 && electron . --dev --no-sandbox\"",
     "electron:build": "npm run build && electron-builder",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
@@ -102,6 +102,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "electron",
+      "esbuild",
+      "vue-demi"
     ]
   }
 }
