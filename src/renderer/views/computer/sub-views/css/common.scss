@@ -1,0 +1,459 @@
+/* sub-views 公共样式：全局引入，所有 sub-view 组件共享 */
+
+/* 通用容器 */
+.sub-page {
+  animation: fadeIn 0.3s ease;
+}
+
+/* section 头 */
+.sub-page .section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sub-page .section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1D2129;
+}
+.sub-page .section-count {
+  font-size: 12px;
+  color: #86909C;
+  background: #F2F3F5;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+.sub-page .section-desc {
+  font-size: 13px;
+  color: #86909C;
+}
+
+/* 空状态 */
+.sub-page .empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: #86909C;
+}
+.sub-page .empty-icon {
+  font-size: 48px;
+  color: #C9CDD4;
+}
+
+/* 搜索框 */
+.sub-page .software-search,
+.sub-page .uninstall-search {
+  margin-bottom: 16px;
+  max-width: 320px;
+}
+
+/* 软件卡片 */
+.sub-page .software-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.sub-page .software-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.sub-page .software-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(22, 93, 255, 0.12);
+  border-color: transparent;
+}
+.sub-page .card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+.sub-page .card-body {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.sub-page .card-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+  margin-bottom: 4px;
+}
+.sub-page .card-ver {
+  font-size: 11px;
+  color: #86909C;
+}
+.sub-page .card-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.sub-page .software-card:hover .card-actions {
+  opacity: 1;
+}
+
+/* 分析流程 */
+.sub-page .analyze-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.sub-page .flow-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+.sub-page .flow-step.done {
+  background: linear-gradient(135deg, #F0FFF4, #E8F8EE);
+  border-color: #D4F4DD;
+}
+.sub-page .flow-step.current {
+  background: linear-gradient(135deg, #E8F0FE, #D4E4FF);
+  border-color: #D4E4FF;
+}
+.sub-page .flow-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F2F3F5;
+  color: #86909C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.sub-page .flow-step.done .flow-num {
+  background: #00B42A;
+  color: #fff;
+}
+.sub-page .flow-step.current .flow-num {
+  background: #165DFF;
+  color: #fff;
+}
+.sub-page .flow-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sub-page .flow-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+}
+.sub-page .flow-tip {
+  font-size: 12px;
+  color: #86909C;
+}
+.sub-page .flow-action {
+  flex-shrink: 0;
+}
+
+/* 分析结果 */
+.sub-page .analyze-result-box {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+.sub-page .result-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #165DFF, #4080FF);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sub-page .result-bd {
+  padding: 18px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #4E5969;
+}
+
+/* 清理统计 */
+.sub-page .cleanup-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.sub-page .stat-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.sub-page .stat-card.highlight {
+  background: linear-gradient(135deg, #E8F0FE, #F0F5FF);
+  border-color: #D4E4FF;
+}
+.sub-page .stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.sub-page .stat-icon.blue { background: #E8F0FE; color: #165DFF; }
+.sub-page .stat-icon.orange { background: #FFF7E6; color: #FF7D00; }
+.sub-page .stat-icon.green { background: #E8F8EE; color: #00B42A; }
+.sub-page .stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sub-page .stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D2129;
+}
+.sub-page .stat-lab {
+  font-size: 12px;
+  color: #86909C;
+}
+
+/* 清理列表 */
+.sub-page .cleanup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.sub-page .cleanup-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.sub-page .cleanup-tick {
+  flex-shrink: 0;
+}
+.sub-page .cleanup-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sub-page .cleanup-icon.cache { background: #FFF7E6; color: #FF7D00; }
+.sub-page .cleanup-icon.download { background: #E8F0FE; color: #165DFF; }
+.sub-page .cleanup-icon.temp { background: #F5F6FA; color: #86909C; }
+.sub-page .cleanup-icon.log { background: #F0FFF4; color: #00B42A; }
+.sub-page .cleanup-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sub-page .cleanup-path {
+  font-size: 13px;
+  color: #1D2129;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub-page .cleanup-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sub-page .cleanup-size {
+  font-size: 12px;
+  color: #86909C;
+}
+.sub-page .cleanup-footer {
+  display: flex;
+  gap: 12px;
+}
+
+/* 卸载列表 */
+.sub-page .uninstall-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sub-page .uninstall-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+.sub-page .uninstall-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.sub-page .uninstall-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sub-page .uninstall-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sub-page .uninstall-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+}
+.sub-page .uninstall-size {
+  font-size: 12px;
+  color: #86909C;
+}
+.sub-page .uninstall-action {
+  flex-shrink: 0;
+}
+
+/* ==================== 软件管理 (Manage.vue) ==================== */
+
+.sub-page .manage-table {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sub-page .manage-table.no-bordered {
+  border: none;
+  box-shadow: none;
+}
+
+.sub-page .manage-table.no-bordered .arco-table,
+.sub-page .manage-table.no-bordered .arco-table-element,
+.sub-page .manage-table.no-bordered .arco-table-container,
+.sub-page .manage-table.no-bordered .arco-table-th,
+.sub-page .manage-table.no-bordered .arco-table-td,
+.sub-page .manage-table.no-bordered .arco-table-cell,
+.sub-page .manage-table.no-bordered .arco-table-tr:hover > .arco-table-td {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sub-page .manage-table.no-bordered .arco-table-th {
+  background: transparent;
+}
+
+.sub-page .app-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sub-page .app-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #165DFF;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sub-page .app-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sub-page .app-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.sub-page .app-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sub-page .app-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.sub-page .app-publisher {
+  font-size: 12px;
+  color: #86909C;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.sub-page .size-loading {
+  font-size: 12px;
+  color: #C9CDD4;
+  font-style: italic;
+}
+
+.sub-page .size-empty {
+  font-size: 12px;
+  color: #C9CDD4;
+}

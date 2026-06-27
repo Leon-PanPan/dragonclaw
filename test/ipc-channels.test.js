@@ -1,0 +1,10 @@
+const CH = require('../shared/ipc-channels');
+const values = Object.values(CH);
+const duplicates = values.filter((v, i) => values.indexOf(v) !== i);
+const allUnique = duplicates.length === 0;
+const allDefined = values.every(v => typeof v === 'string' && v.length > 0);
+console.log(allUnique && allDefined ? 'PASS' : 'FAIL', ': shared/ipc-channels.js');
+console.log('  Total channels:', values.length);
+console.log('  All unique:', allUnique);
+console.log('  All strings:', allDefined);
+if (!allUnique || !allDefined) process.exit(1);

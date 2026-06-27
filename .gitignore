@@ -1,0 +1,156 @@
+# Dependencies
+node_modules/
+**/node_modules/
+./node_modules/
+# Build outputs
+dist/
+**/dist/
+renderer/dist/
+out/
+release/
+
+# Logs
+*.log
+_logs/*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+temp/
+tmp/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Cache files
+.cache/
+*.cache
+
+# User data directory
+
+# Package lock files
+package-lock.json
+yarn.lock
+
+# Debug files
+*.debug
+*.log.*
+
+# Coverage reports
+coverage/
+
+# Distribution files
+*.dmg
+*.exe
+*.AppImage
+*.deb
+*.rpm
+
+# Electron files
+**/*.asar
+**/*.asar.unpacked
+
+# TypeScript build files
+**/*.tsbuildinfo
+
+# ESLint files
+.eslintcache
+
+# Vite files
+.vite/
+
+# PNPM files
+.pnpm-debug.log
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# System files
+**/~$*
+
+# NPM files
+.npmrc
+.npm/
+.npmignore
+
+# Git files
+.gitignore.bak
+
+# Editor files
+*.code-workspace
+
+# Lock files
+pnpm-lock.yaml
+
+# Log files
+**/*.log
+
+# OpenClaw logs
+~/.openclaw/syslog/
+
+# Backup files
+**/*.bak
+**/*.backup
+
+# Temporary files
+**/tmp/
+**/temp/
+
+# Cache directories
+.cache/
+**/.cache/
+
+# IDE specific files
+**/.idea/
+**/.vscode/
+
+# OS specific files
+**/Thumbs.db
+**/.DS_Store
+
+# Distribution directories
+**/dist/
+**/build/
+**/release/
+
+# Node modules
+**/node_modules/
+
+# TypeScript declaration files (if not part of source)
+**/*.d.ts
+
+# Vim swap files
+**/*.swp
+**/*.swo
+
+# Emacs backup files
+**/*~
+
+# VS Code settings
+.vscode/settings.json
+
+# JetBrains IDE files
+**/.idea/
+**/*.iml
+
+# Merge artifacts
+**/*.orig
+**/*.rej
+

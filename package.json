@@ -1,0 +1,107 @@
+{
+  "name": "dragonclaw",
+  "version": "0.0.1",
+  "description": "DragonClaw Agent Desktop Client for OpenClaw",
+  "main": "src/main/index.js",
+  "author": "杨里卬", 
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "vite --mode development",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently --kill-others --success first \"npm run dev\" \"wait-on http-get://localhost:5177 --timeout 60000 --interval 1000 && electron . --dev --no-sandbox\"",
+    "electron:build": "npm run build && electron-builder",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:all": "npm run build && electron-builder --win --mac --linux",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
+    "dist:mac-arm64": "npm run build && electron-builder --mac dmg --arm64",
+    "dist:mac-x64": "npm run build && electron-builder --mac dmg --x64",
+    "postinstall": "node scripts/postinstall.mjs"
+  },
+  "dependencies": {
+    "@arco-design/web-vue": "^2.53.0",
+    "@noble/ed25519": "^3.0.1",
+    "axios": "^1.6.0",
+    "highlight.js": "^11.9.0",
+    "markdown-it": "^13.0.0",
+    "pinia": "^2.1.0",
+    "socket.io-client": "^4.6.0",
+    "sql.js": "^1.14.1",
+    "vue": "^3.3.0",
+    "vue-router": "^4.2.0"
+  },
+  "devDependencies": {
+    "@streamparser/json": "^0.0.22",
+    "@vitejs/plugin-vue": "^4.4.0",
+    "concurrently": "^8.2.0",
+    "electron": "^41.0.3",
+    "electron-builder": "^24.0.0",
+    "electron-fix": "^1.1.7",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "sass": "^1.100.0",
+    "vite": "^5.0.0",
+    "wait-on": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.dragonclaw.app",
+    "productName": "DragonClaw",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/main/**/*",
+      "src/preload/**/*",
+      "src/assets/**/*",
+      "src/shared/**/*",
+      "shared/**/*",
+      "renderer/dist/**/*",
+      "package.json",
+      "!src/renderer/node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
+      "language": 2052,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DragonClaw",
+      "uninstallDisplayName": "DragonClaw"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "src/assets/icons/icon.icns",
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/assets/icons",
+      "category": "Development"
+    }
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "4.60.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

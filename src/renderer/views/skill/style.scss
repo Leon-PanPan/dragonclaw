@@ -1,0 +1,937 @@
+.skill-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.skill-header {
+  background-color: var(--bg-primary);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.skill-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.skill-description {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.search-filter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.recommended-skills,
+.all-skills,
+.installed-skills {
+  background-color: var(--bg-primary);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.view-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-mode-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.skill-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow);
+}
+
+.skill-card.featured {
+  border-left: 4px solid var(--primary-color);
+}
+
+.skill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.skill-badges {
+  display: flex;
+  gap: 4px;
+}
+
+.skill-card-content {
+  flex: 1;
+}
+
+.skill-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.skill-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  max-height: 3em;
+  transition: all 0.2s;
+}
+
+.skill-description:hover {
+  -webkit-line-clamp: unset;
+  max-height: none;
+  overflow: visible;
+}
+
+/* 表格中的技能描述 */
+.skill-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  max-height: 3em;
+}
+
+.skill-desc:hover {
+  -webkit-line-clamp: unset;
+  max-height: none;
+  overflow: visible;
+}
+
+.skill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.skill-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.skill-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.skills-list {
+  margin-top: 16px;
+}
+
+.skill-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-info {
+  flex: 1;
+}
+
+.installed-stats {
+  margin-top: auto;
+}
+
+.stats-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  padding: 16px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.skill-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.detail-info {
+  flex: 1;
+}
+
+.detail-info h3 {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.detail-description {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.detail-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.detail-tab-content {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.detail-tab-content pre {
+  background-color: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* 终端输出模态框 */
+.terminal-output {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 4px;
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-output.running::after {
+  content: '▍';
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.terminal-header {
+  background: #1e1e1e;
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
+}
+
+.terminal-command {
+  background: #1e1e1e;
+  color: #4ec9b0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.terminal-command .terminal-label {
+  color: #d4d4d4;
+}
+
+.terminal-command code {
+  color: #4ec9b0;
+}
+
+.terminal-body {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  max-height: 120px; /* 默认5行高度 */
+  overflow-y: auto;
+  border-radius: 0 0 4px 4px;
+}
+
+.terminal-body pre {
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+/* 统一页面头部样式 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #E5E6EB;
+  flex-shrink: 0;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.title-icon {
+  font-size: 24px;
+  color: #165DFF;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Tabs 容器 - 竖向菜单布局 */
+.skills-tabs-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.skills-tabs-wrapper :deep(.arco-tabs) {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row; /* 强制水平排列 Nav 和 Content */
+}
+
+.skills-tabs-wrapper :deep(.arco-tabs-nav) {
+  width: 140px;
+  background: #f7f8fa;
+  border-right: 1px solid #E5E6EB;
+  padding: 8px 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.skills-tabs-wrapper :deep(.arco-tabs-content) {
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: scroll;
+}
+
+.skills-tabs-wrapper :deep(.arco-tabs-pane) {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tab 内容区 */
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 搜索栏 - 白色背景 */
+.search-bar {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e6eb;
+  flex-shrink: 0;
+}
+
+/* 表格容器 - 核心滚动区域 */
+.skills-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #fff;
+  min-height: 0;
+}
+
+/* Arco Table */
+.skills-table-wrapper :deep(.arco-table) {
+  width: 100%;
+}
+
+.skills-table-wrapper :deep(.arco-table-container) {
+  overflow-y: auto;
+}
+
+.skills-table-wrapper :deep(.arco-table-body) {
+  overflow-y: auto;
+}
+
+/* 分页组件 */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: #fff;
+  border-top: 1px solid #e5e6eb;
+  flex-shrink: 0;
+  margin-top: auto; /* 推到底部 */
+}
+
+/* 表格单元格 */
+.skill-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.skill-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.skill-info .skill-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  display: flex;
+  align-items: center;
+}
+
+.skill-info .skill-author {
+  font-size: 12px;
+  color: #86909c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 描述行 - 显示在技能名称下方，限制宽度防止溢出 */
+.skill-desc-row {
+  font-size: 12px;
+  color: #86909c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  max-width: 280px;
+}
+
+/* 作者名称 */
+.author-name {
+  font-size: 13px;
+  color: #4E5969;
+}
+
+/* 未安装信息 */
+.no-install-info {
+  font-size: 12px;
+  color: #86909c;
+}
+
+/* 操作按钮 - 固定在右侧 */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 分页组件 - 右下方 */
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e5e6eb;
+}
+
+/* 已安装智能体标签 */
+.installed-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* 安装弹窗 */
+.install-skill-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: #f7f8fa;
+  border-radius: 4px;
+}
+
+.install-skill-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.install-skill-author {
+  font-size: 12px;
+  color: #86909c;
+}
+
+/* 详情弹窗样式 */
+.skill-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.detail-info {
+  flex: 1;
+}
+
+.detail-info h3 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #1D2129;
+  margin-bottom: 8px;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: #86909c;
+}
+
+.detail-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+  margin-bottom: 8px;
+}
+
+.detail-section p {
+  font-size: 14px;
+  color: #4E5969;
+  line-height: 1.6;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-tab-content {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f7f8fa;
+  border-radius: 4px;
+}
+
+.detail-tab-content pre {
+  padding: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #E5E6EB;
+}
+
+/* 终端输出弹窗 */
+.terminal-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.terminal-modal .terminal-output {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 4px;
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-header {
+  background: #1e1e1e;
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
+}
+
+.terminal-command {
+  background: #1e1e1e;
+  color: #4ec9b0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.terminal-command .terminal-label {
+  color: #d4d4d4;
+}
+
+.terminal-command code {
+  color: #4ec9b0;
+}
+
+.terminal-body {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 0 0 4px 4px;
+}
+
+.terminal-body pre {
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ===== 管理 Tab 样式 ===== */
+.skills-manage-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #fff;
+  min-height: 0;
+}
+
+.manage-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+}
+
+.manage-loading p {
+  color: #86909c;
+  font-size: 14px;
+}
+
+/* 技能分组 */
+.skill-group {
+  margin-bottom: 16px;
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f7f8fa;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.group-header:hover {
+  background: #f0f1f5;
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.group-arrow {
+  font-size: 14px;
+  color: #86909c;
+  transition: transform 0.2s;
+}
+
+.group-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.group-body {
+  border-top: 1px solid #E5E6EB;
+}
+
+/* 技能项 */
+.skill-manage-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f1f5;
+  transition: background-color 0.2s;
+}
+
+.skill-manage-item:last-child {
+  border-bottom: none;
+}
+
+.skill-manage-item:hover {
+  background: #fafbfc;
+}
+
+.skill-manage-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 16px;
+}
+
+.skill-manage-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.skill-emoji {
+  font-size: 18px;
+}
+
+.skill-manage-header .skill-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.skill-manage-info .skill-desc {
+  font-size: 13px;
+  color: #86909c;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.skill-missing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ff7d00;
+  margin-top: 6px;
+}
+
+.skill-missing svg {
+  flex-shrink: 0;
+}
+
+.skill-apikey-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.skill-manage-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 安装技能全局 loading 遮罩 */
+.skill-view .global-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 100;
+}
+
+.skill-view .global-loading p {
+  margin-top: 16px;
+  color: #666;
+  font-size: 14px;
+}

@@ -1,0 +1,229 @@
+.model-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+/* === 页面头部 === */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.title-icon { font-size: 22px; color: var(--primary-color); }
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === 自定义模型列表 === */
+.model-list{
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+  display: flex;
+  justify-content: center;
+}
+.custom-list {
+  padding: 12px 20px;
+  width: 70%;
+}
+
+.custom-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.provider-group {
+  margin-bottom: 16px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+/* Provider 分组头 */
+.provider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.provider-header:hover { background: var(--bg-hover, #F2F3F5); }
+
+.provider-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.provider-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.provider-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.provider-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.provider-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.collapse-arrow {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.collapse-arrow.collapsed {
+  transform: rotate(180deg);
+}
+
+/* 模型表格 */
+.model-table {
+  width: 100%;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 0.7fr 0.7fr 0.6fr 1fr;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 0.7fr 0.7fr 0.6fr 1fr;
+  gap: 8px;
+  padding: 10px 14px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.15s;
+}
+.table-row:last-child { border-bottom: none; }
+.table-row:hover { background: var(--bg-secondary); }
+
+/* 各列 */
+.col-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.model-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.model-id { font-size: 11px; color: var(--text-secondary); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.col-cap {
+  display: flex;
+  gap: 6px;
+}
+
+.cap-icon {
+  font-size: 14px;
+  color: var(--text-tertiary, #C9CDD4);
+}
+.cap-icon.active {
+  color: var(--primary-color, #165DFF);
+}
+
+.col-resp {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.col-act {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.col-value { font-size: 13px; color: var(--text-secondary); }
+
+/* ===== 骨架屏样式 ===== */
+.skeleton-model-full {
+  width: 100%;
+}
+
+.skeleton-provider-group {
+  margin-bottom: 16px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.skeleton-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.skeleton-provider-logo {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0;
+}
+
+.skeleton-model-table {
+  width: 100%;
+}
+
+.skeleton-table-header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.skeleton-table-row {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}

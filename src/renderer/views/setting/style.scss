@@ -1,0 +1,271 @@
+.setting-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  position: relative;
+}
+
+.page-header {
+  background-color: var(--bg-primary);
+  padding: 16px 20px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.page-title .title-icon {
+  font-size: 24px;
+  color: #165DFF;
+}
+
+.page-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.setting-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 左侧导航 */
+.setting-nav {
+  width: 150px;
+  flex-shrink: 0;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  padding: 10px 24px;
+  font-size: 14px;
+  color: #4E5969;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-primary);
+  color: #1D2129;
+}
+
+.nav-item.active {
+  background-color: var(--bg-primary);
+  color: #165DFF;
+  font-weight: 500;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #165DFF;
+  border-radius: 0 2px 2px 0;
+}
+
+/* 右侧内容区域包装器 */
+.setting-body-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 右侧内容区域 */
+.setting-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.setting-body-inner {
+  padding: 24px;
+  max-width: 800px;
+  position: relative;
+  min-height: 100%;
+}
+
+/* 底部保存按钮栏 */
+.setting-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+/* 设置区域 */
+.settings-section {
+  margin-bottom: 12px;
+  // border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1D2129;
+  padding-bottom: 12px;
+  display: inline-block;
+  border-bottom: 1px solid #eee;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.settings-group {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D2129;
+  margin-bottom: 14px;
+}
+
+/* 表单辅助样式 */
+.form-tip {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 8px;
+  display: inline;
+}
+
+.form-link {
+  font-size: 12px;
+  color: #165DFF;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 8px;
+  display: inline;
+}
+
+.form-link:hover {
+  color: #4080ff;
+}
+
+.form-unit {
+  margin-left: 8px;
+  color: var(--text-secondary);
+}
+
+/* 表单label对齐 - 统一宽度 */
+:deep(.arco-form-item-label) {
+  min-width: 100px;
+}
+
+/* 自定义滚动条样式 */
+.setting-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.setting-body::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.setting-body::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+.setting-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.setting-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.setting-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.setting-nav::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 2px;
+}
+
+/* Loading状态样式 */
+.setting-body-inner :deep(.arco-loading) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+/* 骨架屏样式 */
+.skeleton-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.skeleton-section:last-child {
+  border-bottom: none;
+}
+
+.skeleton-section-title {
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+}
+
+.skeleton-group {
+  margin-bottom: 24px;
+}
+
+.skeleton-group-title {
+  margin-bottom: 16px;
+}
+
+.skeleton-form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.skeleton-label {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.skeleton-control {
+  flex: 1;
+}

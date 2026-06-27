@@ -1,0 +1,718 @@
+.kanban-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #F7F8FA;
+}
+
+/* 统一页面头部样式 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #E5E6EB;
+  flex-shrink: 0;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.title-icon {
+  font-size: 24px;
+  color: #165DFF;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kanban-body {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.kanban-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #C9CDD4;
+}
+
+.empty-icon-large {
+  font-size: 64px;
+  opacity: 0.3;
+}
+
+.empty-text {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 12px;
+  color: #86909C;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: #A9AEB8;
+  margin-top: 8px;
+}
+
+/* Agent 列 */
+.agent-column {
+  flex: 1;
+  min-width: 300px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff 0%, #F8FAFC 100%);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 3px solid;
+  border-radius: 14px 14px 0 0;
+}
+
+.agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.agent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1D2129;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #86909C;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background: #52C41A;
+  animation: pulse 1.5s infinite;
+}
+
+.status-dot.idle {
+  background: #BBBBC3;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.agent-count {
+  background: #165DFF;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* 任务列表 */
+.task-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  min-height: 120px;
+}
+
+.task-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 10px;
+  color: #C9CDD4;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.empty-icon {
+  font-size: 36px;
+  opacity: 0.4;
+}
+
+/* 指令集卡片 */
+.task-set-card {
+  background: #FAFAFA;
+  border: 1px solid #E5E6EB;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  animation: slideFadeIn 0.3s ease;
+}
+
+.task-set-card:last-child {
+  margin-bottom: 0;
+}
+
+.task-set-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.task-set-card.is-executing {
+  background: linear-gradient(135deg, #F0F5FF 0%, #FAFBFF 100%);
+  border-color: #ADC6FF;
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.1);
+}
+
+.task-set-card.is-executing:hover {
+  box-shadow: 0 4px 18px rgba(22, 93, 255, 0.15);
+}
+
+.task-set-card.just-completed {
+  animation: completeFlash 0.6s ease;
+}
+
+/* 任务头部 */
+.task-set-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #F0F1F3;
+}
+
+.task-set-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 任务状态 dot */
+.task-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-status-dot.executing {
+  background: #FF7D00;
+  animation: pulse-dot 1.5s infinite;
+}
+
+.task-status-dot.completed {
+  background: #52C41A;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.user-message {
+  font-size: 13px;
+  color: #1D2129;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+/* 帮助图标 */
+.task-help-icon {
+  font-size: 14px;
+  color: #86909C;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-help-icon:hover {
+  color: #165DFF;
+}
+
+.task-set-time {
+  font-size: 11px;
+  color: #86909C;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* 无指令状态 */
+.task-no-instructions {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #86909C;
+}
+
+/* 指令列表 */
+.instruction-list {
+  padding: 8px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.instruction-item:last-child {
+  margin-bottom: 0;
+}
+
+.instruction-item:hover {
+  border-color: #165DFF;
+  box-shadow: 0 2px 6px rgba(22, 93, 255, 0.1);
+}
+
+.instruction-item.is-new {
+  animation: fadeIn 0.3s ease;
+}
+
+.instruction-item.status-success {
+  background: #F6FFED;
+  border-color: #B7EB8F;
+  border-left-color: #52C41A;
+}
+
+.instruction-item.status-success:hover {
+  border-color: #52C41A;
+  box-shadow: 0 2px 6px rgba(82, 196, 26, 0.15);
+}
+
+.instruction-item.status-error {
+  background: #FFF2F0;
+  border-color: #FFCCC7;
+  border-left-color: #FF4D4F;
+}
+
+.instruction-item.status-error:hover {
+  border-color: #FF4D4F;
+  box-shadow: 0 2px 6px rgba(255, 77, 79, 0.15);
+}
+
+.instruction-item.status-running {
+  background: #FFFBE6;
+  border-color: #FFE58F;
+  border-left-color: #FF7D00;
+}
+
+.instruction-item.status-running:hover {
+  border-color: #FF7D00;
+  box-shadow: 0 2px 6px rgba(255, 125, 0, 0.15);
+}
+
+/* 状态图标 */
+.instruction-status {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.spin-icon {
+  font-size: 18px;
+  color: #FF7D00;
+  animation: spin 1s linear infinite;
+}
+
+.success-icon {
+  font-size: 18px;
+  color: #52C41A;
+}
+
+.error-icon {
+  font-size: 18px;
+  color: #FF4D4F;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 指令内容 */
+.instruction-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.instruction-thinking {
+  font-size: 11px;
+  color: #86909C;
+  margin-bottom: 4px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.instruction-tool {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tool-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tool-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1D2129;
+  flex-shrink: 0;
+}
+
+.tool-desc {
+  font-size: 12px;
+  color: #4E5969;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.instruction-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instruction-time {
+  font-size: 11px;
+  color: #86909C;
+}
+
+.instruction-elapsed {
+  font-size: 11px;
+  font-weight: 500;
+  color: #FF7D00;
+  background: rgba(255, 125, 0, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.instruction-state {
+  font-size: 11px;
+  color: #86909C;
+}
+
+/* 抽屉样式 */
+.drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.drawer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.drawer-status.status-running {
+  background: rgba(255, 125, 0, 0.1);
+  color: #FF7D00;
+}
+
+.drawer-status.status-success {
+  background: rgba(0, 184, 42, 0.1);
+  color: #52C41A;
+}
+
+.drawer-status.status-error {
+  background: rgba(255, 77, 79, 0.1);
+  color: #FF4D4F;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D2129;
+}
+
+.drawer-thinking {
+  background: #FAFAFA;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  color: #1D2129;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-left: 3px solid #FF7D00;
+}
+
+.drawer-code {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.drawer-result {
+  background: #FAFAFA;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.drawer-executing {
+  text-align: center;
+  padding: 40px 20px;
+  color: #86909C;
+  font-size: 14px;
+}
+
+/* ========== 动画 ========== */
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes completeFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(82, 196, 26, 0.6);
+    border-color: #52C41A;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(82, 196, 26, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(82, 196, 26, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ========== Agent 列头汇总 ========== */
+.agent-summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px 8px;
+  font-size: 11px;
+  color: #86909C;
+  border-bottom: 1px dashed #E5E6EB;
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.summary-item {
+  white-space: nowrap;
+}
+
+.summary-sep {
+  color: #C9CDD4;
+  margin: 0 2px;
+}
+
+/* ========== 任务统计行 ========== */
+.task-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px 8px;
+  font-size: 11px;
+  color: #86909C;
+  border-top: 1px solid #F0F1F3;
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.stats-item {
+  white-space: nowrap;
+}
+
+.stats-sep {
+  color: #C9CDD4;
+  margin: 0 2px;
+}
+
+/* ========== 滚动条美化 ========== */
+.task-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.task-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+  background: #D0D5DD;
+  border-radius: 10px;
+}
+
+.task-list::-webkit-scrollbar-thumb:hover {
+  background: #B0B5BD;
+}
+
+.kanban-body::-webkit-scrollbar {
+  height: 5px;
+}
+
+.kanban-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-body::-webkit-scrollbar-thumb {
+  background: #D0D5DD;
+  border-radius: 10px;
+}
+
+.kanban-body::-webkit-scrollbar-thumb:hover {
+  background: #B0B5BD;
+}
+
+/* ========== 状态图标弹跳动画 ========== */
+.instruction-item .success-icon,
+.instruction-item .error-icon {
+  animation: bounceIn 0.35s ease;
+}
+
+/* ===== 骨架屏样式 ===== */
+.skeleton-kanban-full {
+  width: 100%;
+}
+
+.skeleton-kanban-body {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.skeleton-agent-column {
+  flex: 1;
+  min-width: 300px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.skeleton-column-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 3px solid #E5E6EB;
+}
+
+.skeleton-column-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  flex-shrink: 0;
+}
+
+.skeleton-column-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-task-card {
+  background: #F7F8FA;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.skeleton-task-rows {
+  margin-top: 8px;
+}

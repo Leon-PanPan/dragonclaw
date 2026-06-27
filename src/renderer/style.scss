@@ -1,0 +1,151 @@
+/* 全局样式 */
+:root {
+  --primary-color: #2A5CAA;
+  --secondary-color: #00B4F0;
+  --accent-color: #FF6B35;
+  --success-color: #4CD964;
+  --warning-color: #FF9500;
+  --error-color: #FF3B30;
+  --text-primary: #1D2129;
+  --text-secondary: #86909C;
+  --text-tertiary: #C9CDD4;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7F8FA;
+  --bg-tertiary: #E5E6EB;
+  --border-color: #E5E6EB;
+}
+
+/* 全局滚动条样式 - 统一外观 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* 暗色滚动条（用于深色背景区域） */
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666666;
+}
+
+/* 全局重置 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+/* 工具类 */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.p-2 {
+  padding: 8px;
+}
+
+.p-4 {
+  padding: 16px;
+}
+
+.m-2 {
+  margin: 8px;
+}
+
+.m-4 {
+  margin: 16px;
+}
+
+.rounded {
+  border-radius: 4px;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 外部链接图标 */
+.external-link {
+  color: var(--link-color, #165dff);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.external-icon {
+  font-size: 12px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.external-link:hover {
+  text-decoration: underline;
+}
+
+/* 消息文本 markdown-content 需要限制宽度 */
+.message-text.markdown-content {
+  width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}

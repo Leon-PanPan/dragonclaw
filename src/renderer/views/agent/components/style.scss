@@ -1,0 +1,164 @@
+.drawer-edit-layout {
+  display: flex;
+  height: 100%;
+  gap: 0;
+}
+
+.drawer-tabs {
+  width: 100px;
+  background: #F7F8FA;
+  border-right: 1px solid #E5E6EB;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+.drawer-tab-item {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #4E5969;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.drawer-tab-item:hover {
+  background: #E8F3FF;
+  color: #165DFF;
+}
+
+.drawer-tab-item.active {
+  background: #E8F3FF;
+  color: #165DFF;
+  border-left-color: #165DFF;
+  font-weight: 500;
+}
+
+.drawer-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+}
+
+/* 设置表单 */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1D2129;
+  margin-bottom: 4px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
+  color: #4E5969;
+  font-weight: 500;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #86909C;
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #165DFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  font-size: 18px;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-hint {
+  font-size: 12px;
+  color: #86909C;
+}
+
+.workspace-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.workspace-picker .arco-input-wrapper {
+  flex: 1;
+}
+
+.editor-header {
+  margin-bottom: 12px;
+}
+
+.editor-file {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D2129;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.editor-desc {
+  font-size: 12px;
+  color: #86909C;
+}
+
+.content-textarea {
+  flex: 1;
+  resize: none;
+}
+
+.editor-footer-drawer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #E5E6EB;
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+
+.footer-hint {
+  font-size: 12px;
+  color: #86909C;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #E5E6EB;
+}
