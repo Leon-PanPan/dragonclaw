@@ -305,6 +305,37 @@ pnpm build:linux
 pnpm build:all
 ```
 
+### 5. ابنِ **كل** المُثبّتات التي يستطيع هذا المضيف إنتاجها دفعةً واحدة
+
+يشغّل `pnpm build:all` السكربت [`scripts/build-all.mjs`](scripts/build-all.mjs) —
+سكربت صغير يختار تلقائيًا المجموعة الصحيحة من الأهداف لكل نظام تشغيل
+مضيف، حتى لا تحتاج إلى تذكّر أعلام البنية في كل مرة.
+
+| نظام المضيف | المُنتَجات |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe` (مُثبّت NSIS) |
+
+```bash
+# اطبع الخطة فقط، دون بناء فعلي
+pnpm build:all:dry
+
+# ابنِ جزءًا فقط (مثلاً: تخطَّ الـ universal لتوفير الوقت)
+pnpm build:all --skip=mac-universal
+
+# هدف واحد فقط
+pnpm build:all --only=linux-x64
+
+# أعد استخدام renderer/dist الحالي (تجاوز إعادة بناء Vite)
+pnpm build:all:npm
+```
+
+> `electron-builder` لا يدعم التجميع المتبادل (مثلًا: لا يمكن إنتاج
+> `.dmg` على مُشغّل CI يعمل بنظام Linux). أنتج كل مُنتَج على المضيف
+> المناسب له. إذا أردت مع ذلك محاولة بناء المنصات الثلاث على جهاز واحد
+> «بأفضل جهد»، استخدم الأمر القديم `pnpm build:all:cross`.
+
 توضع مخرجات البناء في المجلد `dist/`.
 
 ---
@@ -322,7 +353,9 @@ pnpm build:all
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |
-| `pnpm build:all` | Build installers for all three platforms |
+| `pnpm build:all` | ابنِ **كل** المُثبّتات القابلة للإنتاج على هذا المضيف (مُجزّأة حسب البنية) |
+| `pnpm build:all:dry` | اطبع خطة البناء لكل مضيف دون تنفيذها فعليًا |
+| `pnpm build:all:npm` | تمامًا مثل `build:all` لكن يُعيد استخدام `renderer/dist` الموجود |
 
 > جميع مديري الحزم `pnpm` و `npm` و `yarn` مدعومون. إذا كنت تستخدم `npm`، فاستبدِل `pnpm` بـ `npm run` (مثلًا `npm run electron:dev`)؛ وإن كنت تستخدم `yarn`، فاستبدِل `pnpm` بـ `yarn` (مثلًا `yarn electron:dev`).
 

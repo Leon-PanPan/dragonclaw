@@ -307,6 +307,35 @@ pnpm build:all
 
 打包產物會輸出到 `dist/` 目錄。
 
+### 5. 一鍵打包目前宿主平台**所有**能出的安裝包
+
+`pnpm build:all` 實際執行的是 [`scripts/build-all.mjs`](scripts/build-all.mjs) —— 一個
+按宿主作業系統自動選擇目標集合的小腳本，免去手動指定架構參數的麻煩。
+
+| 宿主平台 | 會打的產物 |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe`（NSIS 安裝包）|
+
+```bash
+# 只列印計畫，不實際打包
+pnpm build:all:dry
+
+# 只打子集（例如跳過 universal 包以節省時間）
+pnpm build:all --skip=mac-universal
+
+# 只打一個目標
+pnpm build:all --only=linux-x64
+
+# 複用已建置的 renderer/dist（跳過 Vite 重新打包）
+pnpm build:all:npm
+```
+
+> `electron-builder` **不支援跨平台編譯**（例如在 Linux CI runner 上打 `.dmg`）。
+> 需要別的平臺的產物，請在對應系統的機器上分別執行本腳本；若確實要在
+> 單臺機器上「盡力而為」地嘗試三平臺同時打包，可使用舊指令 `pnpm build:all:cross`。
+
 ---
 
 ## 🛠️ 常用腳本
@@ -322,7 +351,9 @@ pnpm build:all
 | `pnpm build:win` | 建置 Windows 安裝包 |
 | `pnpm build:mac` | 建置 macOS 安裝包 |
 | `pnpm build:linux` | 建置 Linux 安裝包 |
-| `pnpm build:all` | 同時建置三平台安裝包 |
+| `pnpm build:all` | 一鍵建置目前宿主平臺**所有**可出的安裝包（按架構細分）|
+| `pnpm build:all:dry` | 列出按宿主平臺劃分的打包計畫，不實際建置 |
+| `pnpm build:all:npm` | 同 `build:all`，但複用已有的 `renderer/dist` |
 
 > 軟體同時支援 `pnpm`、`npm`、`yarn` 三種套件管理工具；`npm` 使用者請將 `pnpm` 替換為 `npm run`，`yarn` 使用者請將 `pnpm` 替換為 `yarn`，例如 `npm run electron:dev` 或 `yarn electron:dev`。
 

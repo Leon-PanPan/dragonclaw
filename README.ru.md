@@ -305,6 +305,37 @@ pnpm build:linux
 pnpm build:all
 ```
 
+### 5. Собрать **все** установщики, которые способен породить текущий хост
+
+`pnpm build:all` запускает [`scripts/build-all.mjs`](scripts/build-all.mjs) —
+небольшой скрипт, который подбирает правильный набор целей под ОС хоста,
+чтобы не вспоминать каждый раз нужные флаги архитектуры.
+
+| ОС хоста | Что собирается |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe` (NSIS-установщик) |
+
+```bash
+# Только показать план, без фактической сборки
+pnpm build:all:dry
+
+# Собрать только часть (например, пропустить universal)
+pnpm build:all --skip=mac-universal
+
+# Собрать только одну цель
+pnpm build:all --only=linux-x64
+
+# Переиспользовать уже собранный renderer/dist (пропустить Vite)
+pnpm build:all:npm
+```
+
+> `electron-builder` не поддерживает кросс-компиляцию (например, `.dmg`
+> на Linux-CI-раннере собрать нельзя). Получайте нужные артефакты на
+> соответствующем хосте. Если всё-таки нужно попытаться собрать всё на
+> одной машине «как получится», используйте старую команду `pnpm build:all:cross`.
+
 Артефакты сборки записываются в каталог `dist/`.
 
 ---
@@ -322,7 +353,9 @@ pnpm build:all
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |
-| `pnpm build:all` | Build installers for all three platforms |
+| `pnpm build:all` | Собрать **все** установщики, которые способен породить текущий хост (с разбивкой по архитектурам) |
+| `pnpm build:all:dry` | Показать план сборки по хосту, не выполняя её |
+| `pnpm build:all:npm` | То же, что `build:all`, но переиспользует существующий `renderer/dist` |
 
 > Поддерживаются все три менеджера: `pnpm`, `npm` и `yarn`. Если вы используете `npm`, замените `pnpm` на `npm run` (например, `npm run electron:dev`); если вы используете `yarn`, замените `pnpm` на `yarn` (например, `yarn electron:dev`).
 

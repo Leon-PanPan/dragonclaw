@@ -305,6 +305,34 @@ pnpm build:linux
 pnpm build:all
 ```
 
+### 5. 現在のホストで生成できる**すべての**インストーラーを一括ビルド
+
+`pnpm build:all` は [`scripts/build-all.mjs`](scripts/build-all.mjs) を実行します。
+これはホスト OS ごとに正しいターゲット集合を自動選択する小さなスクリプトで、
+アーキテクチャ指定のフラグを毎回手で指定する手間を省きます。
+
+| ホスト OS | 生成される成果物 |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe`（NSIS インストーラー）|
+
+```bash
+# 実際にはビルドせず、計画だけを表示
+pnpm build:all:dry
+
+# サブセットのみビルド（例：universal を省略して時間短縮）
+pnpm build:all --skip=mac-universal
+
+# 単一ターゲットのみ
+pnpm build:all --only=linux-x64
+
+# 既存の renderer/dist を再利用（Vite 再ビルドをスキップ）
+pnpm build:all:npm
+```
+
+> `electron-builder` はクロスコンパイルに対応していないため（例：Linux CI ランナーで `.dmg` を生成することは不可）、各成果物は対応するホスト OS 上で生成してください。単一ホストで「ベストエフォート」に 3 プラットフォームすべてを生成したい場合は、旧コマンド `pnpm build:all:cross` を使ってください。
+
 ビルド成果物は `dist/` ディレクトリに出力されます。
 
 ---
@@ -322,7 +350,9 @@ pnpm build:all
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |
-| `pnpm build:all` | Build installers for all three platforms |
+| `pnpm build:all` | 現在のホストで生成できる**すべての**インストーラーを一括ビルド（アーキテクチャ別）|
+| `pnpm build:all:dry` | ホスト別ビルド計画を表示するだけで実ビルドは行わない |
+| `pnpm build:all:npm` | `build:all` と同じだが既存の `renderer/dist` を再利用する |
 
 > `pnpm`、`npm`、`yarn` のすべてに対応しています。`npm` をお使いの場合は `pnpm` を `npm run` に、`yarn` をお使いの場合は `pnpm` を `yarn` に置き換えてください（例：`npm run electron:dev` または `yarn electron:dev`）。
 

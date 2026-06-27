@@ -330,6 +330,37 @@ pnpm build:all
 
 The build output is written to the `dist/` directory.
 
+### 5. Build **every** installer the current host can produce
+
+`pnpm build:all` runs [`scripts/build-all.mjs`](scripts/build-all.mjs) — a small
+script that picks the right target set per host OS so you don't have to
+remember which arch flags go with which target.
+
+| Host OS | What gets built |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe` (NSIS installer) |
+
+```bash
+# See the plan without actually building
+pnpm build:all:dry
+
+# Build only a subset (e.g. skip the universal binary to save time)
+pnpm build:all --skip=mac-universal
+
+# Build only one target
+pnpm build:all --only=linux-x64
+
+# Reuse an existing renderer/dist (skip the Vite rebuild)
+pnpm build:all:npm
+```
+
+> Cross-compiling a different OS (e.g. producing a `.dmg` on a Linux
+> CI runner) isn't supported by `electron-builder` — run the script on
+> the matching host, or use the legacy `pnpm build:all:cross` command
+> for a "best-effort, single-host" build.
+
 ---
 
 ## 🛠️ Scripts
@@ -345,7 +376,9 @@ The build output is written to the `dist/` directory.
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |
-| `pnpm build:all` | Build installers for all three platforms |
+| `pnpm build:all` | Build every installer the current host can produce (per-architecture) |
+| `pnpm build:all:dry` | Print the per-host build plan without building |
+| `pnpm build:all:npm` | Same as `build:all` but reuse an existing `renderer/dist` |
 
 > `pnpm`, `npm` and `yarn` are all supported. If you use `npm`, replace `pnpm` with `npm run` (e.g. `npm run electron:dev`); if you use `yarn`, replace `pnpm` with `yarn` (e.g. `yarn electron:dev`).
 

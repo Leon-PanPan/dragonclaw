@@ -305,6 +305,39 @@ pnpm build:linux
 pnpm build:all
 ```
 
+### 5. **Alle** Installer bauen, die der aktuelle Host erzeugen kann
+
+`pnpm build:all` führt [`scripts/build-all.mjs`](scripts/build-all.mjs) aus — ein
+kleines Skript, das pro Host-Betriebssystem automatisch die richtige
+Zielmenge auswählt, sodass du nicht jedes Mal die Architektur-Flags
+zusammenbauen musst.
+
+| Host-OS | Erzeugte Artefakte |
+| --- | --- |
+| macOS | `mac-arm64.dmg` + `mac-x64.dmg` + `mac-universal.dmg` |
+| Linux | `linux-x64.AppImage` + `linux-arm64.AppImage` + `linux-x64.deb` |
+| Windows | `win-x64.exe` (NSIS-Installer) |
+
+```bash
+# Plan nur anzeigen, ohne tatsächlich zu bauen
+pnpm build:all:dry
+
+# Nur eine Teilmenge bauen (z. B. Universal überspringen)
+pnpm build:all --skip=mac-universal
+
+# Nur ein einzelnes Ziel bauen
+pnpm build:all --only=linux-x64
+
+# Vorhandenes renderer/dist wiederverwenden (Vite-Rebuild überspringen)
+pnpm build:all:npm
+```
+
+> `electron-builder` unterstützt kein Cross-Compiling (z. B. ein `.dmg` auf
+> einem Linux-CI-Runner zu erzeugen ist nicht möglich). Erzeuge die jeweiligen
+> Artefakte auf dem passenden Host. Wenn du auf einer einzigen Maschine
+> „best-effort" alle drei Plattformen versuchen willst, verwende den alten
+> Befehl `pnpm build:all:cross`.
+
 Das Build-Ergebnis wird in den Ordner `dist/` geschrieben.
 
 ---
@@ -322,7 +355,9 @@ Das Build-Ergebnis wird in den Ordner `dist/` geschrieben.
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |
-| `pnpm build:all` | Build installers for all three platforms |
+| `pnpm build:all` | **Alle** Installer bauen, die der aktuelle Host erzeugen kann (aufgeschlüsselt nach Architektur) |
+| `pnpm build:all:dry` | Per-Host-Buildplan anzeigen, ohne tatsächlich zu bauen |
+| `pnpm build:all:npm` | Wie `build:all`, aber vorhandenes `renderer/dist` wiederverwenden |
 
 > Es werden alle drei Paketmanager unterstützt: `pnpm`, `npm` und `yarn`. Wenn du `npm` verwendest, ersetze `pnpm` durch `npm run` (z. B. `npm run electron:dev`); wenn du `yarn` verwendest, ersetze `pnpm` durch `yarn` (z. B. `yarn electron:dev`).
 
