@@ -1076,22 +1076,76 @@ async function testRemoteConnection() {
   remoteConfigTesting.value = true;
   remoteConfigTestResult.value = null;
   const { ip, port, authMethod, token } = remoteConfigForm.value;
-  
+
   // 根据认证方式构建 URL
   let tokenPart = '';
   if (authMethod === 'token' && token) {
     tokenPart = `?token=${encodeURIComponent(token)}`;
   }
   const testUrl = `ws://${ip}:${port}${tokenPart}`;
-  
+
+  console.log('[testRemoteConnection] ===== 开始测试远程连接 =====');
+  console.log('[testRemoteConnection] 配置:', { ip, port, authMethod, hasToken: !!token, tokenLen: token?.length });
+  console.log('[testRemoteConnection] 目标 URL:', testUrl);
+  console.log('[testRemoteConnection] navigator.onLine =', navigator.onLine);
+  console.log('[testRemoteConnection] location:', { protocol: location.protocol, host: location.host, href: location.href });
+
   try {
     const connected = await new Promise((resolve) => {
-      const ws = new WebSocket(testUrl);
+      console.log('[testRemoteConnection] 准备 new WebSocket()...');
+      let ws;
+      try {
+        ws = new WebSocket(testUrl);
+      } catch (e) {
+        console.error('[testRemoteConnection] new WebSocket() 抛同步异常:', e);
+        resolve(false);
+        return;
+      }
+      console.log('[testRemoteConnection] WebSocket 已创建，readyState =', ws.readyState);
       let resolved = false;
-      const timer = setTimeout(() => { if (!resolved) { resolved = true; ws.close(); resolve(false); } }, 6000);
-      ws.onmessage = (event) => { try { const data = JSON.parse(event.data); if (data.type === 'event' && data.event === 'connect.challenge') { if (!resolved) { resolved = true; clearTimeout(timer); ws.close(); resolve(true); } } } catch {} };
-      ws.onerror = () => { if (!resolved) { resolved = true; clearTimeout(timer); resolve(false); } };
-      ws.onclose = () => { if (!resolved) { resolved = true; clearTimeout(timer); resolve(false); } };
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          console.warn('[testRemoteConnection] 6 秒超时，关闭连接');
+          try { ws.close(); } catch {}
+          resolve(false);
+        }
+      }, 6000);
+      ws.onopen = (event) => {
+        console.log('[testRemoteConnection] ✅ onopen 触发，readyState =', ws.readyState, event);
+      };
+      ws.onmessage = (event) => {
+        console.log('[testRemoteConnection] onmessage:', event.data);
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'event' && data.event === 'connect.challenge') {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timer);
+              ws.close();
+              resolve(true);
+            }
+          }
+        } catch (e) {
+          console.warn('[testRemoteConnection] 解析 message 失败:', e);
+        }
+      };
+      ws.onerror = (event) => {
+        console.error('[testRemoteConnection] ❌ onerror 触发，event =', event, 'readyState =', ws.readyState);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      };
+      ws.onclose = (event) => {
+        console.log('[testRemoteConnection] onclose 触发，code =', event.code, 'reason =', event.reason, 'wasClean =', event.wasClean, 'readyState =', ws.readyState);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          resolve(false);
+        }
+      };
     });
     if (connected) remoteConfigTestResult.value = { success: true, message: `连接成功！服务器 ${ip}:${port} 响应正常` };
     else remoteConfigTestResult.value = { success: false, message: `无法连接到 ${ip}:${port}，请检查 IP、端口和认证信息` };

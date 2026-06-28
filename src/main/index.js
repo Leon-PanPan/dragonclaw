@@ -23,6 +23,14 @@ app.commandLine.appendSwitch('disable-background-networking');
 app.commandLine.appendSwitch('disable-features', 'NetworkService');
 app.commandLine.appendSwitch('log-level', '0');
 
+// 允许渲染进程从 localhost / file:// 访问私有网络（192.168.x.x、10.x、172.16-31.x）。
+// Chromium 124+ 默认会拦截此类请求并报 ERR_ADDRESS_UNREACHABLE，
+// 这里显式禁用该检查，避免开发模式下远程模式测试连接失败。
+app.commandLine.appendSwitch(
+  'disable-features',
+  'BlockInsecurePrivateNetworkRequests,PrivateNetworkAccessSendPreviews'
+);
+
 // ── PATH 增强 ──
 // macOS/Linux 上从 Finder / Launch Services 启动的 Electron 应用
 // 不会继承用户 shell 的 PATH，必须主动把常见安装目录（/usr/local/bin、
@@ -91,6 +99,23 @@ function createWindow() {
       webSecurity: process.env.NODE_ENV !== 'development',
     },
     frame: true, titleBarStyle: 'default',
+  });
+
+  // 设置合理的 Content-Security-Policy，消除 DevTools 的不安全 CSP 警告。
+  // 允许 connect 到任意 ws/wss（远程模式需要连接局域网 IP）和 http/https。
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+          "connect-src 'self' ws: wss: http: https:; " +
+          "img-src 'self' data: blob: http: https:; " +
+          "media-src 'self' data: blob: http: https:; " +
+          "font-src 'self' data: blob:;"
+        ],
+      },
+    });
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });
