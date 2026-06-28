@@ -332,6 +332,21 @@ pnpm build:all:npm
 ```
 
 > `electron-builder` 는 크로스 컴파일을 지원하지 않으므로 (예: Linux CI 러너에서 `.dmg` 생성 불가), 각 산출물은 대응하는 호스트 OS 에서 생성해 주세요. 단일 호스트에서 "최선의 노력" 으로 세 플랫폼을 모두 시도해 보려면 옛 명령 `pnpm build:all:cross` 를 사용하세요.
+>
+> **제한된 네트워크를 위한 미러 자동 감지.** `electron-builder` 는 패키징할 때
+> 자체적으로 약 110 MiB 의 Electron 바이너리를 다운로드합니다 (`node_modules/electron/dist/`
+> 의 사본을 재사용하지 않습니다). 일부 네트워크 (특히 중국 본토) 에서는
+> 공식 GitHub Releases 에 사실상 접속할 수 없기 때문에, 본 스크립트는 실행할 때마다
+> 작은 미러 후보 목록 (`npmmirror.com` 과 GitHub) 에 대해 병렬 TCP 프로빙을
+> 수행해 가장 빠른 것을 고른 뒤 `ELECTRON_BUILDER_BINARIES_MIRROR` 를
+> `electron-builder` 자식 프로세스에 주입합니다. 수동으로 고정하려면:
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> 또는 `--no-mirror-detect` 로 프로빙을 완전히 건너뛸 수 있습니다.
 
 빌드 산출물은 `dist/` 디렉터리에 생성됩니다.
 

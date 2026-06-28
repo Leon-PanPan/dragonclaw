@@ -419,6 +419,13 @@ ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
       return { status: 500, message: 'Updater 未初始化' };
     }
 
+    // 复用 Updater 启动时已经请求过的结果，避免重复 HTTP
+    const cached = _updater.getLastRawResponse();
+    if (cached) {
+      console.log('[fetch-version-check] 复用 Updater 已缓存的云端响应');
+      return cached;
+    }
+
     const currentVersion = _updater.getCurrentVersion();
     let env = await _updater.getEnvVersionsPublic();
     const platform = _updater.getClawcPlatformPublic();
@@ -442,7 +449,7 @@ ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
 
     console.log('[fetch-version-check] machineId:', machineId);
 
-    const apiPath = config.clawc?.api?.versionCheck || 'index.php/addons/clawc/version/check';
+    const apiPath = config.clawc?.api?.versionCheck || 'base/api/addons/clawc/version/check';
     const params = new URLSearchParams({
       version: currentVersion,
       platform,

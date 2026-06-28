@@ -335,6 +335,20 @@ pnpm build:all:npm
 > `electron-builder` **不支援跨平台編譯**（例如在 Linux CI runner 上打 `.dmg`）。
 > 需要別的平臺的產物，請在對應系統的機器上分別執行本腳本；若確實要在
 > 單臺機器上「盡力而為」地嘗試三平臺同時打包，可使用舊指令 `pnpm build:all:cross`。
+>
+> **受限網路的鏡像自動偵測。** `electron-builder` 在打包時**自己**也會下載約 110 MiB
+> 的 Electron 二進位檔（不會複用 `node_modules/electron/dist/` 裡的副本）；在部分網路
+> （尤其是中國大陸）下官方 GitHub Releases 不可達。每次執行本腳本時，會先對一小組
+> 候選鏡像（`npmmirror.com` 與 GitHub）做並行 TCP 探測，自動選最快的來源，
+> 接著把 `ELECTRON_BUILDER_BINARIES_MIRROR` 注入到 `electron-builder` 子進程。
+> 也可手動指定：
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> 或用 `--no-mirror-detect` 略過探測。
 
 ---
 

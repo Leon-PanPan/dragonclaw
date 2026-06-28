@@ -335,6 +335,22 @@ pnpm build:all:npm
 > `.dmg` على مُشغّل CI يعمل بنظام Linux). أنتج كل مُنتَج على المضيف
 > المناسب له. إذا أردت مع ذلك محاولة بناء المنصات الثلاث على جهاز واحد
 > «بأفضل جهد»، استخدم الأمر القديم `pnpm build:all:cross`.
+>
+> **الكشف التلقائي عن المرايا للشبكات المقيَّدة.** يقوم `electron-builder`
+> أثناء التغليف بتنزيل ~110 MiB من ثنائيات Electron **بنفسه** (لا يعيد
+> استخدام النسخة في `node_modules/electron/dist/`). في بعض الشبكات
+> (لا سيما في الصين القارية) يكون مضيف GitHub Releases شبه غير قابل
+> للوصول عمليًا. في كل تشغيل، يُجري هذا السكربت قياسًا متوازيًا لـ TCP
+> handshake على قائمة صغيرة من المرايا (`npmmirror.com` و GitHub)،
+> يختار الأسرع، ويُمرِّر `ELECTRON_BUILDER_BINARIES_MIRROR` إلى العملية
+> الفرعية لـ `electron-builder`. للتثبيت اليدوي:
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> أو تخطَّ الكشف كليًا عبر `--no-mirror-detect`.
 
 توضع مخرجات البناء في المجلد `dist/`.
 

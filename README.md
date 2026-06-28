@@ -360,6 +360,21 @@ pnpm build:all:npm
 > CI runner) isn't supported by `electron-builder` — run the script on
 > the matching host, or use the legacy `pnpm build:all:cross` command
 > for a "best-effort, single-host" build.
+>
+> **Mirror auto-detection for restricted networks.** `electron-builder`
+> downloads ~110 MiB Electron binaries itself when packaging; from some
+> networks (notably mainland China) the official GitHub Releases host
+> is unreachable. On every invocation the script races a quick TCP
+> probe against a small list of mirrors (`npmmirror.com` and GitHub),
+> picks the fastest, and injects `ELECTRON_BUILDER_BINARIES_MIRROR`
+> into the `electron-builder` subprocess. Pin a specific mirror with:
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> Or skip probing entirely with `--no-mirror-detect`.
 
 ---
 

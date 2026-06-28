@@ -226,6 +226,7 @@ import { ref, reactive, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import { platform } from '@/core/ipc';
 import { systemApi } from '@/api/gateway';
+import rootConfig from '@shared/config';
 
 const props = defineProps({
   clawcDomain: { type: String, required: true },
@@ -566,7 +567,7 @@ const initOpenClaw = async (key) => {
   params.set('timestamp', ts);
   if (openclawVersion) params.set('openclaw_version', openclawVersion);
 
-  const initUrl = `${props.clawcDomain}/index.php/addons/clawc/install/initScript?${params.toString()}`;
+  const initUrl = `${props.clawcDomain}/${rootConfig.clawc.api.installInitScript}?${params.toString()}`;
 
   pushLine(key, { message: '🔧 正在初始化 OpenClaw...', type: 'stdout', success: null });
 

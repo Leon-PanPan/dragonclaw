@@ -332,6 +332,21 @@ pnpm build:all:npm
 ```
 
 > `electron-builder` はクロスコンパイルに対応していないため（例：Linux CI ランナーで `.dmg` を生成することは不可）、各成果物は対応するホスト OS 上で生成してください。単一ホストで「ベストエフォート」に 3 プラットフォームすべてを生成したい場合は、旧コマンド `pnpm build:all:cross` を使ってください。
+>
+> **制限ネットワーク向けのミラー自動検出。** `electron-builder` はパッケージ化時にも
+> 独自に約 110 MiB の Electron バイナリをダウンロードします（`node_modules/electron/dist/`
+> にあるものは使用されません）。一部のネットワーク（特に中国大陸）では公式 GitHub Releases
+> への接続が事実上不可能なため、本スクリプトは実行ごとに小さなミラー候補リスト
+> （`npmmirror.com` と GitHub）に対して並行 TCP 計測を行い、最速のものを選んで
+> `ELECTRON_BUILDER_BINARIES_MIRROR` を `electron-builder` の子プロセスに注入します。
+> 手動で固定するには：
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> または `--no-mirror-detect` で計測を完全にスキップできます。
 
 ビルド成果物は `dist/` ディレクトリに出力されます。
 

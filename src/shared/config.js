@@ -6,6 +6,7 @@ export const clawc = {
   domain: 'http://api.dragonclaw.cc',
   api: {
     versionCheck: 'base/api/addons/clawc/version/check',
+    installInitScript: 'base/api/addons/clawc/install/initScript',
   },
 };
 

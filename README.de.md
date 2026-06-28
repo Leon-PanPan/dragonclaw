@@ -337,6 +337,23 @@ pnpm build:all:npm
 > Artefakte auf dem passenden Host. Wenn du auf einer einzigen Maschine
 > „best-effort" alle drei Plattformen versuchen willst, verwende den alten
 > Befehl `pnpm build:all:cross`.
+>
+> **Mirror-Auto-Erkennung für eingeschränkte Netze.** `electron-builder`
+> lädt beim Paketieren **selbst** nochmals ca. 110 MiB Electron-Binaries
+> herunter (es verwendet nicht die Kopie unter `node_modules/electron/dist/`).
+> In manchen Netzen (insbesondere dem chinesischen Festland) ist der
+> offizielle GitHub-Releases-Host praktisch unerreichbar. Bei jedem Aufruf
+> misst das Skript parallel per TCP-Handshake eine kleine Mirror-Liste
+> (`npmmirror.com` und GitHub), wählt den schnellsten aus und injiziert
+> `ELECTRON_BUILDER_BINARIES_MIRROR` in den `electron-builder`-Subprozess.
+> Manuell festlegen:
+>
+> ```bash
+> export ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron
+> pnpm build:all
+> ```
+>
+> Mit `--no-mirror-detect` lässt sich die Erkennung komplett überspringen.
 
 Das Build-Ergebnis wird in den Ordner `dist/` geschrieben.
 

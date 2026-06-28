@@ -44,6 +44,7 @@ import { spawn, spawnSync as nodeSpawnSync } from 'child_process';
 import { existsSync, readdirSync, rmSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import net from 'net';
 import process from 'process';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -79,12 +80,13 @@ const err  = (m) => console.error(`${TAG} ${COL.red}✗${COL.reset} ${m}`);
 // Argument parsing (tiny, dependency-free)
 // ---------------------------------------------------------------------------
 function parseArgs(argv) {
-  const out = { only: null, skip: null, clean: true, dryRun: false, noVite: false };
+  const out = { only: null, skip: null, clean: true, dryRun: false, noVite: false, noMirrorDetect: false };
   for (const a of argv.slice(2)) {
     if (a === '--no-clean')   out.clean = false;
     else if (a === '--clean') out.clean = true;
     else if (a === '--dry-run') out.dryRun = true;
     else if (a === '--no-vite') out.noVite = true;
+    else if (a === '--no-mirror-detect') out.noMirrorDetect = true;
     else if (a.startsWith('--only='))  out.only  = a.slice(7).split(',').map((s) => s.trim()).filter(Boolean);
     else if (a.startsWith('--skip='))  out.skip  = a.slice(7).split(',').map((s) => s.trim()).filter(Boolean);
     else if (a === '--help' || a === '-h') {
@@ -95,6 +97,7 @@ Options:
   --skip=<id1,id2,...>   Skip the listed targets
   --no-clean             Keep existing dist/ contents before building
   --no-vite              Skip 'pnpm run build' (use existing renderer/dist)
+  --no-mirror-detect     Skip mirror RTT probe (use GitHub unless ELECTRON_BUILDER_BINARIES_MIRROR is set)
   --dry-run              Print the plan, do not invoke electron-builder
   -h, --help             Show this help
 
@@ -102,6 +105,11 @@ Available target ids:
   mac-arm64, mac-x64, mac-universal
   linux-x64, linux-arm64, linux-x64-deb
   win-x64
+
+Environment:
+  ELECTRON_BUILDER_BINARIES_MIRROR
+      Pin a specific mirror (skips the RTT probe). electron-builder will
+      download electron binaries from <MIRROR>/v<VERSION>/<FILE>.
 `);
       process.exit(0);
     } else {
@@ -212,11 +220,11 @@ function hasCommand(cmd) {
 // Run a single command, streaming output if we're in a TTY-friendly mode.
 // Returns the exit code (we never throw on non-zero — the caller decides).
 // ---------------------------------------------------------------------------
-function run(cmd, args, { cwd, env } = {}) {
+function run(cmd, args, { cwd, extraEnv } = {}) {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
       cwd: cwd || ROOT,
-      env: { ...process.env, ...(env || {}) },
+      env: { ...process.env, ...(extraEnv || {}) },
       stdio: 'inherit',
     });
     child.on('error', (e) => {
@@ -264,8 +272,11 @@ function newArtifactsSince(before) {
 }
 
 function findMatchingArtifact(after, match) {
+  // `after` is a list of absolute paths; the matcher regex is written
+  // against the basename, so compare against the filename only.
   for (const p of after) {
-    if (match.test(p)) return p;
+    const base = p.split(/[\\/]/).pop();
+    if (match.test(base)) return p;
   }
   return null;
 }
@@ -277,6 +288,94 @@ function fmtSize(bytes) {
   let i = 0;
   while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
   return `${n.toFixed(1)} ${units[i]}`;
+}
+
+// ---------------------------------------------------------------------------
+// Mirror auto-detection for electron-builder's binary downloads.
+//
+// Why this exists
+// ---------------
+// `electron-builder` (via its `app-builder-bin` Go binary) downloads the
+// Electron prebuilt zips itself when packaging — it does NOT reuse the
+// binary we placed at `node_modules/.../electron/dist/`. So the postinstall
+// mirror logic does not save us here.
+//
+// The Go binary honours two env vars (confirmed by `strings` on the binary):
+//   * `ELECTRON_BUILDER_BINARIES_MIRROR`
+//   * `NPM_CONFIG_ELECTRON_BUILDER_BINARIES_MIRROR`
+// When set, the URL pattern switches from
+//   https://github.com/electron/electron/releases/download/v<VER>/<FILE>
+// to
+//   <MIRROR>/v<VER>/<FILE>
+// We probe the candidate mirrors, pick the fastest reachable one, and inject
+// the env var into every `electron-builder` invocation.
+//
+// Skip detection with `--no-mirror-detect` or by exporting
+// `ELECTRON_BUILDER_BINARIES_MIRROR=...` yourself.
+// ---------------------------------------------------------------------------
+const BUILDER_MIRRORS = [
+  // npmmirror.com mirrors the full electron release set and is fast from
+  // mainland China. Path layout matches the GitHub layout with a `v` prefix.
+  { id: 'npmmirror', url: 'https://npmmirror.com/mirrors/electron',
+    note: 'Mainland-China-friendly CDN, no rate limit.' },
+  // Official GitHub Releases. Fast in most non-CN regions.
+  { id: 'github',    url: 'https://github.com/electron/electron/releases/download',
+    note: 'Official GitHub Releases. Fast in most non-CN regions.' },
+];
+
+async function probeMirrorRtt(mirror) {
+  // We measure TCP-handshake RTT to the host, not full HTTPS GET RTT.
+  // Why: from some networks (mainland China in particular) the TLS /
+  // HTTP layer will hang indefinitely even when the host is reachable,
+  // and `app-builder-bin` itself will fail the same way. A successful
+  // TCP handshake is therefore a *necessary* condition for the mirror
+  // to be usable, even if not sufficient — but in practice, the hosts
+  // we list all serve HTTPS reliably when they accept the SYN.
+  const u = new URL(mirror.url);
+  return new Promise((resolve) => {
+    const t0 = Date.now();
+    const sock = net.connect({
+      host: u.hostname,
+      port: u.port || 443,
+      family: 4, // force IPv4 — gives the most predictable result across dual-stack networks
+    });
+    const timer = setTimeout(() => { sock.destroy(); resolve(Infinity); }, 2500);
+    sock.once('connect', () => { clearTimeout(timer); sock.destroy(); resolve(Date.now() - t0); });
+    sock.once('error',   () => { clearTimeout(timer); sock.destroy(); resolve(Infinity); });
+  });
+}
+
+async function rankBuilderMirrors() {
+  const ranked = await Promise.all(
+    BUILDER_MIRRORS.map(async (m) => ({ mirror: m, rtt: await probeMirrorRtt(m) }))
+  );
+  return ranked.sort((a, b) => a.rtt - b.rtt).map((r) => r.mirror);
+}
+
+async function resolveBuilderMirror({ noMirrorDetect }) {
+  // 1. Honour explicit user override (env var or command line).
+  const explicit = process.env.ELECTRON_BUILDER_BINARIES_MIRROR;
+  if (explicit && explicit.trim() !== '') {
+    info(`using pinned electron-builder mirror: ${explicit}`);
+    return { url: explicit.trim(), source: 'env' };
+  }
+  if (noMirrorDetect) {
+    info('--no-mirror-detect: skipping probe, electron-builder will use the default (GitHub)');
+    return { url: null, source: 'default' };
+  }
+  // 2. Probe and pick.
+  info('probing electron-builder mirror reachability…');
+  const ranked = await rankBuilderMirrors();
+  const summary = ranked
+    .map((m) => `${m.id}${m.rtt === Infinity ? ' (timeout)' : ` (${m.rtt}ms)`}`)
+    .join(' → ');
+  info(`  ↳ mirror order: ${summary}`);
+  const winner = ranked[0];
+  if (!winner || winner.rtt === Infinity) {
+    warn('all mirrors timed out — falling back to the default (GitHub). If you are behind a firewall, set ELECTRON_BUILDER_BINARIES_MIRROR=… manually.');
+    return { url: null, source: 'default' };
+  }
+  return { url: winner.url, source: winner.id };
 }
 
 // ---------------------------------------------------------------------------
@@ -324,12 +423,23 @@ async function main() {
     }
   }
 
+  // Decide which electron-builder binary mirror to use. The probe is fast
+  // (≤ 2.5s per mirror, run in parallel) and skipped under --dry-run above.
+  const mirror = await resolveBuilderMirror({ noMirrorDetect: args.noMirrorDetect });
+  const extraEnv = mirror.url
+    ? { ELECTRON_BUILDER_BINARIES_MIRROR: mirror.url }
+    : null;
+
   // Build each target. Failures are non-fatal; we collect them.
   const results = [];
   for (const t of targets) {
     const before = snapshotDist();
     info(`${COL.bold}==> building ${t.id}${COL.reset}  ${COL.dim}(${t.label})${COL.reset}`);
-    const code = await run('npx', ['--no-install', 'electron-builder', ...t.buildArgs]);
+    const code = await run(
+      'npx',
+      ['--no-install', 'electron-builder', ...t.buildArgs],
+      { extraEnv }
+    );
     const after = newArtifactsSince(before);
     const artifact = findMatchingArtifact(after, t.match);
     if (code === 0 && artifact) {

@@ -91,7 +91,7 @@ class Updater {
   async checkForUpdate() {
     if (this.isChecking) {
       console.log('[Updater] 正在检查更新，跳过...');
-      return this.updateInfo;
+      return this.updateInfo || { hasUpdate: false, version: this.currentVersion };
     }
 
     this.isChecking = true;
@@ -105,7 +105,7 @@ class Updater {
 
       const cfg = APP_CONFIG.clawc;
       const domain = cfg.domain;
-      const apiPath = cfg.api?.versionCheck || 'index.php/addons/clawc/version/check';
+      const apiPath = cfg.api?.versionCheck || 'base/api/addons/clawc/version/check';
       const params = new URLSearchParams({
         version: this.currentVersion,
         platform: getClawcPlatform(),
@@ -121,6 +121,7 @@ class Updater {
 
       const rawResponse = await this.httpGet(url);
       const response = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
+      this.lastRawResponse = response;
 
       console.log('[Updater] 原始响应:', JSON.stringify(response));
 
@@ -211,11 +212,11 @@ class Updater {
       return false;
     }
 
-    this.isChecking = true;
     console.log('[Updater] 开始检查更新...');
 
     this.checkForUpdate()
       .then((result) => {
+        console.log('[Updater] send to renderer update-check-status:', result);
         this.sendToRenderer('update-check-status', {
           ok: true,
           hasUpdate: !!(result && result.hasUpdate),
@@ -233,9 +234,6 @@ class Updater {
           ok: false,
           error: err.message
         });
-      })
-      .finally(() => {
-        this.isChecking = false;
       });
 
     return true;
@@ -412,6 +410,10 @@ class Updater {
 
   getUpdateInfo() {
     return this.updateInfo;
+  }
+
+  getLastRawResponse() {
+    return this.lastRawResponse;
   }
 
   clearCache() {
