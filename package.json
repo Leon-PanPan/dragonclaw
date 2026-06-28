@@ -69,8 +69,11 @@
       "!src/renderer/node_modules/**/*"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "src/assets/icons/icon.ico"
+      "target": [
+        { "target": "nsis", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "src/assets/icons/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -94,9 +97,30 @@
       ]
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        { "target": "AppImage", "arch": ["x64", "arm64"] },
+        { "target": "deb", "arch": ["x64", "arm64"] }
+      ],
       "icon": "src/assets/icons",
-      "category": "Development"
+      "category": "Development",
+      "synopsis": "Smart Desktop Client for OpenClaw Agent Platform",
+      "description": "DragonClaw Agent Desktop Client for OpenClaw",
+      "maintainer": "杨里卬 <noreply@dragonclaw.local>",
+      "vendor": "DragonClaw"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0"
+      ],
+      "priority": "optional"
     }
   },
   "optionalDependencies": {
