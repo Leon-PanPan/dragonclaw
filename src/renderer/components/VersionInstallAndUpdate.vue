@@ -724,52 +724,24 @@ const handleSingleInstall = async (key) => {
 };
 
 const handleOneClickInstall = async () => {
-  installRunning.value = true;
-  installAllComplete.value = false;
-
   const items = updateItems.value;
-  if (items.length === 0) {
-    installRunning.value = false;
-    return;
-  }
+  if (items.length === 0) return;
+
+  installAllComplete.value = false;
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const key = item.key;
 
-    resetEnvLogs(key);
-    item.installing = true;
-    item.status = 'installing';
-    item.phase = 'downloading';
-    item.downloadProgress = 0;
-    expandedEnvs[key] = true;
-
     pushLine(key, { message: `[${i + 1}/${items.length}] 正在处理: ${getItemLabel(key)}`, type: 'stdout', success: null });
 
-    try {
-      await runInstallForEnv(key);
+    await handleSingleInstall(key);
 
-      item.installing = false;
-      item.status = 'success';
-      item.update = false;
-      item.installed = true;
-      item.phase = 'idle';
-
-      emit('item-installed', { key, version: item.current });
-    } catch (e) {
-      item.installing = false;
-      item.status = 'error';
-      item.phase = 'idle';
-      pushLine(key, { message: `✗ ${getItemLabel(key)} 失败: ${e.message}`, type: 'stderr', success: false });
-
-      emit('item-failed', { key, error: e.message });
-      if (item.force) break;
-    } finally {
-      item.downloadProgress = 0;
+    if (item.force && clawcData[key].status === 'error') {
+      break;
     }
   }
 
-  installRunning.value = false;
   installAllComplete.value = true;
   emit('all-completed', {
     results: {
