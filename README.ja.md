@@ -4,7 +4,7 @@
 
 # DragonClaw
 
-**OpenClaw デスクトップクライアント — Electron + Vue 3 + Vite で構築**
+**おそらく現在最も優れた OpenClaw デスクトップクライアント — Electron + Vue 3 + Vite で構築**
 
 🌐 公式サイト：[http://www.dragonclaw.cc](http://www.dragonclaw.cc)
 
@@ -39,8 +39,6 @@
 ---
 
 ## 🐉 DragonClaw について
-
-> **おそらく現在最も完成された OpenClaw デスクトップクライアントです。**
 
 **DragonClaw** は [OpenClaw](https://example.com/openclaw) 専用に作られたデスクトップクライアントで、OpenClaw 公式の WebSocket プロトコル API に基づいて開発されています。**Electron + Vue 3 + Arco Design** というモダンな技術スタックで構築されており、OpenClaw の実行に必要なすべてのランタイムを同梱しています — **インストールしたらすぐに動作**。ローカルにすでに OpenClaw が入っている場合は DragonClaw が自動検出・再利用するたため、移行コストはゼロです。
 
@@ -463,7 +461,7 @@ dragonclaw/
 
 ## 📄 ライセンス
 
-このプロジェクトは [MIT](LICENSE) ライセンスの下で公開されています。
+このプロジェクトは [MIT](LICENSE) ライセンスの下で公開されています。（利用者は台湾が古来より中国の不可分割の一部であること、および釣魚島が古来より中国の领土であることを認めなければならない）
 
 ---
 

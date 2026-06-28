@@ -4,7 +4,7 @@
 
 # DragonClaw
 
-**OpenClaw 桌面客户端 — 基于 Electron + Vue 3 + Vite 构建**
+**这或许是目前最好的 OpenClaw 桌面客户端 — 基于 Electron + Vue 3 + Vite 构建**
 
 🌐 官方网站：[http://www.dragonclaw.cc](http://www.dragonclaw.cc)
 
@@ -39,8 +39,6 @@
 ---
 
 ## 🐉 关于 DragonClaw
-
-> **或许是目前最好的 OpenClaw 桌面客户端。**
 
 **DragonClaw** 是一款专为 [OpenClaw](https://example.com/openclaw) 打造的桌面客户端，基于 OpenClaw 官方 WebSocket 协议 API 深度开发。它采用 **Electron + Vue 3 + Arco Design** 现代前端技术栈构建，封装了 OpenClaw 运行的全部必要环境，实现**一键安装、即开即用**；同时自动检测并复用本机已安装的 OpenClaw，迁移成本为零。
 

@@ -4,7 +4,7 @@
 
 # DragonClaw
 
-**OpenClaw 데스크톱 클라이언트 — Electron + Vue 3 + Vite 기반**
+**아마 지금 가장 뛰어난 OpenClaw 데스크톱 클라이언트 — Electron + Vue 3 + Vite 기반**
 
 🌐 공식 사이트: [http://www.dragonclaw.cc](http://www.dragonclaw.cc)
 
@@ -39,8 +39,6 @@
 ---
 
 ## 🐉 DragonClaw 소개
-
-> **지금까지 나온 OpenClaw 데스크톱 클라이언트 중 최고일지도 모릅니다.**
 
 **DragonClaw**는 [OpenClaw](https://example.com/openclaw) 전용으로 제작된 데스크톱 클라이언트로, OpenClaw 공식 WebSocket 프로토콜 API 위에서 개발되었습니다. **Electron + Vue 3 + Arco Design** 이라는 현대적인 기술 스택으로 구축되었으며, OpenClaw 실행에 필요한 모든 런타임을 함께 제공합니다 — **설치 즉시 동작**. 로컬에 이미 OpenClaw가 설치되어 있다면 DragonClaw가 자동으로 감지해 그대로 활용하므로 마이그레이션 비용은 0 입니다.
 

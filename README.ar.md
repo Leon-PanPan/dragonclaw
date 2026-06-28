@@ -4,7 +4,7 @@
 
 # DragonClaw
 
-**عميل سطح المكتب لـ OpenClaw — مبني على Electron و Vue 3 و Vite.**
+**ربما هو أفضل عميل سطح مكتب لـ OpenClaw متوفر اليوم — مبني على Electron و Vue 3 و Vite.**
 
 🌐 الموقع الرسمي: [http://www.dragonclaw.cc](http://www.dragonclaw.cc)
 
@@ -39,8 +39,6 @@
 ---
 
 ## 🐉 نبذة عن DragonClaw
-
-> **ربما هو أفضل عميل سطح مكتب لـ OpenClaw متوفر اليوم.**
 
 **DragonClaw** هو عميل سطح مكتب مصمم خصيصًا لـ [OpenClaw](https://example.com/openclaw)، ومطوّر أعلى واجهة WebSocket الرسمية لـ OpenClaw. بُني على حزمة تقنية حديثة **Electron + Vue 3 + Arco Design**، ويأتي مُرفقًا بكل ما يلزم OpenClaw من بيئات تشغيل — **ثبّت وشغّل فورًا**. إذا كان OpenClaw مُثبّتًا على جهازك مسبقًا، فإن DragonClaw سيكتشفه تلقائيًا ويعيد استخدامه، بدون أي تكلفة ترحيل.
 

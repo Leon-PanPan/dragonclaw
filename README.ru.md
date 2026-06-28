@@ -4,7 +4,7 @@
 
 # DragonClaw
 
-**Десктопный клиент для OpenClaw — на Electron, Vue 3 и Vite.**
+**Возможно, лучший на сегодня десктопный клиент для OpenClaw — на Electron, Vue 3 и Vite.**
 
 🌐 Официальный сайт: [http://www.dragonclaw.cc](http://www.dragonclaw.cc)
 
@@ -39,8 +39,6 @@
 ---
 
 ## 🐉 О DragonClaw
-
-> **Возможно, лучший на сегодняшний день десктопный клиент для OpenClaw.**
 
 **DragonClaw** — это целенаправленно разработанный десктопный клиент для [OpenClaw](https://example.com/openclaw), созданный поверх официального WebSocket API OpenClaw. Он построен на современном стеке **Electron + Vue 3 + Arco Design** и поставляется со всем необходимым окружением для работы OpenClaw — **установил и сразу работает**. Если OpenClaw уже установлен на вашей машине, DragonClaw обнаружит его и будет использовать автоматически — без затрат на миграцию.
 
