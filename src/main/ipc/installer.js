@@ -411,6 +411,19 @@ ipcMain.handle(CH.FINISH_SETUP, async () => {
   return { success: true, message: '安装引导完成' };
 });
 
+// 重启 App 自身（silent 安装完成后由前端触发）
+ipcMain.handle(CH.RESTART_APP, async () => {
+  try {
+    console.log('[restart-app] 正在重启应用...');
+    app.relaunch();
+    app.exit(0);
+    return { success: true };
+  } catch (e) {
+    console.error('[restart-app] 重启失败:', e.message);
+    return { success: false, error: e.message };
+  }
+});
+
 // 获取云端版本信息
 ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
   try {

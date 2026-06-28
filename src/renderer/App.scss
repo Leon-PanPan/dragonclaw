@@ -251,3 +251,21 @@
   color: var(--text-secondary, #86909c);
   margin-top: 4px;
 }
+
+/* env-check 页面（包裹 VersionInstallAndUpdate） */
+.env-check-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.env-check-card {
+  width: 100%;
+  max-width: 760px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  margin-top: -6vh;
+}

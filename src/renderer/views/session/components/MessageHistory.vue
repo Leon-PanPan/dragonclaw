@@ -329,7 +329,7 @@ function onTimelineClick(msg) {
   margin: 0;
 }
 
-/* ========== Logo 动画（与 OneClickInstall.vue 保持一致） ========== */
+/* ========== Logo 动画（与 VersionInstallAndUpdate.vue 保持一致） ========== */
 .empty-messages .brand-logo {
   position: relative;
   width: 72px;

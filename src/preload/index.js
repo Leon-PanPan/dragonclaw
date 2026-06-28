@@ -179,6 +179,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('download-error');
   },
   recheckEnvVersions: () => ipcRenderer.invoke('recheck-env-versions'),
+  restartApp: () => ipcRenderer.invoke('restart-app'),
 
   // 数据库操作（SQLite 会话标题）
   dbRenameSession: (sessionId, title) => ipcRenderer.invoke('db-rename-session', { sessionId, title }),

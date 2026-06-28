@@ -89,6 +89,7 @@ module.exports = {
   REQUEST_NATIVE_PASSWORD: 'request-native-password',
   DOWNLOAD_FILE: 'download-file',
   RECHECK_ENV_VERSIONS: 'recheck-env-versions',
+  RESTART_APP: 'restart-app',
 
   // ── Updater ──
   CHECK_FOR_UPDATES: 'check-for-updates',

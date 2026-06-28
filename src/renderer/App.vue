@@ -221,14 +221,19 @@
           <p class="loading-text">环境检测中...</p>
         </div>
 
-        <!-- 一键安装组件（clawc 云端版本管理） -->
-        <OneClickInstall
-          v-else-if="appState === 'env-check'"
-          :clawc-domain="clawcDomain"
-          :mode="envStopMode || 'install'"
-          @continue="handleContinue"
-          @skip="handleSkipUpdate"
-        />
+        <!-- 初始化安装 / 检查更新组件（clawc 云端版本管理，自包含 UI） -->
+        <div v-else-if="appState === 'env-check'" class="env-check-page">
+          <div class="env-check-card">
+            <VersionInstallAndUpdate
+              :mode="envStopMode || 'install'"
+              :auto-check="true"
+              :poll-interval="0"
+              @continue="handleContinue"
+              @skip="handleSkipUpdate"
+              @check-complete="onEnvCheckComplete"
+            />
+          </div>
+        </div>
 
         <!-- OpenClaw 已停止界面 -->
         <div v-else-if="appState === 'ready' && openClawInstalled && !openClawRunning" class="gateway-stopped-container">
@@ -314,8 +319,26 @@
       </div>
     </a-modal>
 
-    <!-- 自动更新检测 -->
-    <VersionChecker auto-check />
+    <!-- 自动更新检测 Modal（env-check 状态时不挂载，避免重复显示） -->
+    <a-modal
+      v-if="appState !== 'env-check'"
+      v-model:visible="updateModalVisible"
+      :closable="canCloseModal"
+      :mask-closable="canCloseModal"
+      :title="updateModalTitle"
+      :title-align="'center'"
+      :footer="false"
+      :width="720"
+    >
+      <VersionInstallAndUpdate
+        ref="updateViaRef"
+        mode="update"
+        :auto-check="true"
+        :poll-interval="600000"
+        @check-complete="onUpdateCheckComplete"
+        @skip="updateModalVisible = false"
+      />
+    </a-modal>
 
     <!-- 关于弹窗 -->
     <AboutModal ref="aboutModalRef" />
@@ -330,10 +353,9 @@ import { Message, Notification } from '@arco-design/web-vue';
 import { wsManager } from '@/core/websocket/manager';
 import rootConfig from '@shared/config';
 import ModeSelector from '@/components/ModeSelector.vue';
-import VersionChecker from '@/components/VersionChecker.vue';
 import AboutModal from '@/components/AboutModal.vue';
 import { useModeStore } from '@/stores/modeStore';
-import OneClickInstall from '@/components/OneClickInstall.vue';
+import VersionInstallAndUpdate from '@/components/VersionInstallAndUpdate.vue';
 import { systemApi, configApi, eventsApi } from '@/api/gateway';
 
 const router = useRouter();
@@ -506,7 +528,7 @@ const initApp = async () => {
       console.log('[App] 部分组件未安装，跳转到 env-check');
       openClawInstalled.value = false;
       envStopMode.value = 'install';
-      // OneClickInstall 组件自行获取云端数据
+      // VersionInstallAndUpdate 组件自行获取云端数据
       appState.value = 'env-check';
       return;
     }
@@ -892,6 +914,29 @@ const stopOpenClaw = async () => {
   }
 };
 
+// ========== VersionInstallAndUpdate 相关 ==========
+
+const updateViaRef = ref(null);
+const updateModalVisible = ref(false);
+const updateModalHasForce = ref(false);
+const updateModalInstalling = ref(false);
+
+const canCloseModal = computed(() => !updateModalHasForce.value && !updateModalInstalling.value);
+
+const updateModalTitle = computed(() => (
+  updateModalHasForce.value ? '强制更新' : '发现新版本'
+));
+
+function onUpdateCheckComplete({ hasForce, hasAnyUpdate }) {
+  updateModalHasForce.value = hasForce;
+  if (hasAnyUpdate) updateModalVisible.value = true;
+}
+
+function onEnvCheckComplete(payload) {
+  // env-check 页面的 VIA 自包含 UI，无需在 App.vue 中跟踪
+  console.debug('[App] env-check 完成:', payload);
+}
+
 // ========== 组件更新通知 ==========
 
 const onComponentUpdateAvailable = (data) => {
@@ -922,35 +967,7 @@ const onComponentUpdateAvailable = (data) => {
   appState.value = 'env-check';
 };
 
-const checkForComponentUpdates = async () => {
-  try {
-    const resp = await window.electronAPI?.fetchVersionCheck?.();
-    if (resp?.status !== 200 || !resp?.data) return;
-
-    const updates = {};
-    for (const key of ['nodejs', 'openclaw']) {
-      const comp = resp.data[key];
-      if (comp && comp.update) {
-        updates[key] = {
-          key,
-          label: key === 'nodejs' ? 'Node.js' : 'OpenClaw',
-          update: true,
-          force: !!comp.force,
-          version: comp.version || '',
-          current: comp.current || '',
-        };
-      }
-    }
-
-    if (Object.keys(updates).length > 0) {
-      onComponentUpdateAvailable(updates);
-    }
-  } catch (e) {
-    console.warn('[App] 组件更新检查失败:', e.message);
-  }
-};
-
-// 一键安装并启动（OneClickInstall 组件完成安装后通过 @continue 触发）
+// 一键安装并启动（VersionInstallAndUpdate 组件完成安装后通过 @all-completed/@continue 触发）
 const handleContinue = async () => {
   console.log('[handleContinue] 启动应用...');
   operationLoading.value = true;
@@ -1224,10 +1241,6 @@ onMounted(async () => {
   componentUpdateUnsub = eventsApi.onComponentUpdate((data) => {
     onComponentUpdateAvailable(data);
   });
-
-  if (appState.value === 'ready' && !modeStore.isRemote) {
-    checkForComponentUpdates();
-  }
 });
 
 onUnmounted(() => {

@@ -85,7 +85,7 @@ class Updater {
    *
    * 返回值：{ hasUpdate, version, force, silent, title, scriptUrl, fileUrl, note }
    * 副作用：
-   *   - dragonclaw 有更新 → 发送 'update-available' 事件给渲染进程（VersionChecker 弹窗）
+   *   - dragonclaw 有更新 → 发送 'update-available' 事件给渲染进程（VersionInstallAndUpdate 弹窗）
    *   - openclaw/nodejs 有更新 → 发送 'component-update-available' 事件给渲染进程（通知条）
    */
   async checkForUpdate() {
@@ -138,6 +138,7 @@ class Updater {
 
       if (dc && dc.update) {
         this.updateInfo = {
+          key: 'dragonclaw',
           hasUpdate: true,
           version: dc.current,
           title: dc.note || '',
