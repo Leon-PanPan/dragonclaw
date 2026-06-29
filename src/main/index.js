@@ -162,7 +162,7 @@ app.whenReady().then(async () => {
     require('./ipc/installer').setUpdater(updater);
     require('./ipc/updater').setUpdater(updater);
   } catch (e) {
-    console.error('[index] Updater 初始化失败:', e);
+    // Updater 初始化失败不影响主流程
   }
 
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

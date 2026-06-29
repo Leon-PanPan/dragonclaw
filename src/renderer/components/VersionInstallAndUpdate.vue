@@ -86,14 +86,22 @@
               <span>安装失败</span>
             </span>
 
-            <span class="via-item-actions" v-if="showItemActions && (item.update || !item.installed) && !item.installing && !installRunning && item.status !== 'success' && item.status !== 'error'">
+            <span class="via-item-actions" v-if="showItemActions && !item.installing && !installRunning && item.status !== 'success' && item.status !== 'error'">
               <a-button
+                v-if="item.update || !item.installed"
                 size="small"
                 :type="!item.installed ? 'primary' : 'outline'"
                 @click.stop="handleSingleInstall(item.key)"
               >
                 {{ item.installed ? '更新' : '安装' }}
               </a-button>
+              <span
+                v-else
+                class="env-ok-check"
+                :title="`${item.label} v${item.version} 已是最新版本`"
+              >
+                <span class="env-ok-check-icon">✓</span>
+              </span>
             </span>
           </div>
         </div>
@@ -1133,6 +1141,32 @@ defineExpose({
 }
 .env-check-icon { background: #00b42a; }
 .env-cross-icon { background: #f53f3f; }
+
+/* 已安装且最新版本时的环境正常对勾 */
+.env-ok-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 180, 42, 0.12);
+  border: 1px solid rgba(0, 180, 42, 0.35);
+  flex-shrink: 0;
+}
+.env-ok-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00b42a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
 
 @keyframes success-pop {
   0% { transform: scale(0.6); opacity: 0; }

@@ -428,14 +428,12 @@ ipcMain.handle(CH.RESTART_APP, async () => {
 ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
   try {
     if (!_updater) {
-      console.log('[fetch-version-check] Updater 未初始化');
       return { status: 500, message: 'Updater 未初始化' };
     }
 
     // 复用 Updater 启动时已经请求过的结果，避免重复 HTTP
     const cached = _updater.getLastRawResponse();
     if (cached) {
-      console.log('[fetch-version-check] 复用 Updater 已缓存的云端响应');
       return cached;
     }
 
@@ -460,8 +458,6 @@ ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
       env.openclaw = devEnv.openclaw.version;
     }
 
-    console.log('[fetch-version-check] machineId:', machineId);
-
     const apiPath = config.clawc?.api?.versionCheck || 'base/api/addons/clawc/version/check';
     const params = new URLSearchParams({
       version: currentVersion,
@@ -474,7 +470,6 @@ ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
     });
     const url = `${domain}/${apiPath}?${params.toString()}`;
 
-    console.log('[fetch-version-check] URL:', url);
     const data = await _updater.httpGetPublic(url);
     const cloudResp = JSON.parse(data);
 
@@ -491,7 +486,6 @@ ipcMain.handle(CH.FETCH_VERSION_CHECK, async () => {
 
     return cloudResp;
   } catch (error) {
-    console.error('[fetch-version-check] Error:', error.message);
     return { status: 500, message: error.message };
   }
 });

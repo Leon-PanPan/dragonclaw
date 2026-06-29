@@ -90,18 +90,14 @@ class Updater {
    */
   async checkForUpdate() {
     if (this.isChecking) {
-      console.log('[Updater] 正在检查更新，跳过...');
       return this.updateInfo || { hasUpdate: false, version: this.currentVersion };
     }
 
     this.isChecking = true;
-    console.log('[Updater] 开始检查更新...');
 
     try {
       const env = await getEnvVersions();
       const machineId = getMachineId();
-      console.log('[Updater] 环境版本:', JSON.stringify(env));
-      console.log('[Updater] machineId:', machineId);
 
       const cfg = APP_CONFIG.clawc;
       const domain = cfg.domain;
@@ -117,13 +113,11 @@ class Updater {
       });
       const url = `${domain}/${apiPath}?${params.toString()}`;
 
-      console.log('[Updater] 请求 URL:', url);
 
       const rawResponse = await this.httpGet(url);
       const response = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
       this.lastRawResponse = response;
 
-      console.log('[Updater] 原始响应:', JSON.stringify(response));
 
       const body = response.data;
 
@@ -131,7 +125,6 @@ class Updater {
         throw new Error('API 返回异常: 响应数据为空');
       }
 
-      console.log('[Updater] 解析后 data:', JSON.stringify(body));
 
       // ── dragonclaw 自身更新 ──
       const dc = body.dragonclaw;
@@ -149,12 +142,9 @@ class Updater {
           fileUrl: dc.file_url || '',
         };
 
-        console.log('[Updater] DragonClaw 发现新版本:', this.updateInfo.version);
 
         if (dc.silent) {
-          console.log('[Updater] 静默更新，开始后台下载...');
           this.downloadUpdate().catch(err => {
-            console.error('[Updater] 静默更新下载失败:', err.message);
           });
           return this.updateInfo;
         }
@@ -165,7 +155,6 @@ class Updater {
           hasUpdate: false,
           version: this.currentVersion,
         };
-        console.log('[Updater] DragonClaw 当前已是最新版本');
       }
 
       // ── openclaw / nodejs 组件更新 → 发送 component-update-available 事件 ──
@@ -189,13 +178,11 @@ class Updater {
       }
 
       if (Object.keys(componentUpdates).length > 0) {
-        console.log('[Updater] 发现组件更新:', Object.keys(componentUpdates).join(', '));
         this.sendToRenderer('component-update-available', componentUpdates);
       }
 
       return this.updateInfo;
     } catch (error) {
-      console.error('[Updater] 检查更新失败:', error.message);
       return { hasUpdate: false, error: error.message };
     } finally {
       this.isChecking = false;
@@ -209,15 +196,12 @@ class Updater {
    */
   checkForUpdateAsync() {
     if (this.isChecking) {
-      console.log('[Updater] 正在检查更新，跳过...');
       return false;
     }
 
-    console.log('[Updater] 开始检查更新...');
 
     this.checkForUpdate()
       .then((result) => {
-        console.log('[Updater] send to renderer update-check-status:', result);
         this.sendToRenderer('update-check-status', {
           ok: true,
           hasUpdate: !!(result && result.hasUpdate),
@@ -230,7 +214,6 @@ class Updater {
         });
       })
       .catch((err) => {
-        console.error('[Updater] 检查更新失败:', err.message);
         this.sendToRenderer('update-check-status', {
           ok: false,
           error: err.message
@@ -242,25 +225,21 @@ class Updater {
 
   async downloadUpdate() {
     if (!this.updateInfo || !this.updateInfo.hasUpdate) {
-      console.log('[Updater] 没有可用更新');
       return false;
     }
 
     if (this.isDownloading) {
-      console.log('[Updater] 正在下载中...');
       return false;
     }
 
     this.isDownloading = true;
     const { version, scriptUrl } = this.updateInfo;
 
-    console.log('[Updater] 开始下载更新:', version);
 
     try {
       await this.downloadFullUpdate(scriptUrl, version);
       return true;
     } catch (error) {
-      console.error('[Updater] 下载更新失败:', error.message);
       this.sendToRenderer('update-error', { message: error.message });
       return false;
     } finally {
@@ -269,7 +248,6 @@ class Updater {
   }
 
   async downloadFullUpdate(scriptUrl, version) {
-    console.log('[Updater] 全量更新，获取安装脚本:', scriptUrl);
 
     this.sendToRenderer('update-progress', {
       stage: 'fetching',
@@ -289,7 +267,6 @@ class Updater {
       throw new Error('安装脚本为空');
     }
 
-    console.log('[Updater] 获取到', scripts.length, '个安装步骤');
 
     for (let i = 0; i < scripts.length; i++) {
       const s = scripts[i];
@@ -301,8 +278,6 @@ class Updater {
         stepName: s.name,
       });
 
-      console.log(`[Updater] 步骤 ${s.step}: ${s.name}`);
-      console.log(`[Updater] 命令: ${s.command}`);
 
       await this.execCommand(s.command);
     }
@@ -314,11 +289,9 @@ class Updater {
       silent: this.updateInfo.silent,
     });
 
-    console.log('[Updater] 全量更新完成');
   }
 
   async downloadIncrementUpdate(scriptUrl, version) {
-    console.log('[Updater] 增量更新，获取脚本:', scriptUrl);
 
     this.sendToRenderer('update-progress', {
       stage: 'fetching',
@@ -338,12 +311,10 @@ class Updater {
       throw new Error('安装脚本为空');
     }
 
-    console.log('[Updater] 获取到', scripts.length, '个步骤（增量）');
 
     for (let i = 0; i < scripts.length; i++) {
       const s = scripts[i];
       if (s.name && s.name.includes('Node.js')) {
-        console.log('[Updater] 增量更新，跳过:', s.name);
         continue;
       }
 
@@ -355,8 +326,6 @@ class Updater {
         stepName: s.name,
       });
 
-      console.log(`[Updater] 步骤 ${s.step}: ${s.name}`);
-      console.log(`[Updater] 命令: ${s.command}`);
 
       await this.execCommand(s.command);
     }
@@ -368,7 +337,6 @@ class Updater {
       silent: this.updateInfo.silent,
     });
 
-    console.log('[Updater] 增量更新完成');
   }
 
   execCommand(command) {
@@ -379,10 +347,8 @@ class Updater {
       };
       exec(command, opts, (error, stdout, stderr) => {
         if (error) {
-          console.error('[Updater] 命令执行失败:', stderr || error.message);
           reject(error);
         } else {
-          console.log('[Updater] 输出:', stdout?.trim() || '(无)');
           resolve();
         }
       });
@@ -423,9 +389,7 @@ class Updater {
         fs.rmSync(UPDATE_TEMP_PATH, { recursive: true, force: true });
         fs.mkdirSync(UPDATE_TEMP_PATH, { recursive: true });
       }
-      console.log('[Updater] 更新缓存已清理');
     } catch (error) {
-      console.error('[Updater] 清理缓存失败:', error.message);
     }
   }
 
