@@ -50,6 +50,7 @@
   "build": {
     "appId": "com.dragonclaw.app",
     "productName": "DragonClaw",
+    "homepage": "https://github.com/Leon-PanPan/dragonclaw",
     "directories": {
       "output": "dist",
       "buildResources": "build"
