@@ -2,6 +2,7 @@
   "name": "dragonclaw",
   "version": "0.0.1",
   "description": "DragonClaw Agent Desktop Client for OpenClaw",
+  "homepage": "https://github.com/Leon-PanPan/dragonclaw",
   "main": "src/main/index.js",
   "author": "杨里卬",
   "license": "MIT",
@@ -50,7 +51,6 @@
   "build": {
     "appId": "com.dragonclaw.app",
     "productName": "DragonClaw",
-    "homepage": "https://github.com/Leon-PanPan/dragonclaw",
     "directories": {
       "output": "dist",
       "buildResources": "build"
