@@ -29,6 +29,7 @@
  * 1. As a CLI shim (used by `package.json` scripts like `build:win`):
  *
  *      node scripts/_mirror.mjs -- electron-builder --win
+ *      node scripts/_mirror.mjs --github-only -- electron-builder --linux deb
  *
  *    The script resolves the mirror, prints a one-line log, then `spawn`s
  *    the rest of the argv (everything after `--`) with the env var set.
@@ -117,20 +118,30 @@ async function rankBuilderMirrors() {
 // ---------------------------------------------------------------------------
 // Main resolver. Returns { url, source } where:
 //   - url    : the chosen mirror URL, or null if user wants the default (GitHub)
-//   - source : 'env' | 'npmmirror' | 'github' | 'default'
+//   - source : 'env' | 'github' | 'npmmirror' | 'default'
 // ---------------------------------------------------------------------------
-export async function resolveBuilderMirror({ noMirrorDetect = false } = {}) {
+export async function resolveBuilderMirror({ noMirrorDetect = false, githubOnly = false } = {}) {
   // 1. Honour explicit user override (env var or command line).
   const explicit = process.env.ELECTRON_BUILDER_BINARIES_MIRROR;
   if (explicit && explicit.trim() !== '') {
     ok(`using pinned electron-builder mirror: ${explicit}`);
     return { url: explicit.trim(), source: 'env' };
   }
+  // 2. --github-only: force the upstream GitHub Releases path. Useful when
+  //    building targets that need auxiliary tools (e.g. fpm for .deb/.rpm)
+  //    that the third-party mirror does not host.
+  if (githubOnly) {
+    ok(`forcing GitHub Releases (--github-only): ${COL.dim}https://github.com/electron/electron/releases/download${COL.reset}`);
+    return {
+      url: 'https://github.com/electron/electron/releases/download',
+      source: 'github',
+    };
+  }
   if (noMirrorDetect) {
     info(`${COL.dim}--no-mirror-detect: skipping probe, electron-builder will use the default (GitHub)${COL.reset}`);
     return { url: null, source: 'default' };
   }
-  // 2. Probe and pick.
+  // 3. Probe and pick.
   info('probing electron-builder mirror reachability\u2026');
   const ranked = await rankBuilderMirrors();
   const summary = ranked
@@ -149,8 +160,8 @@ export async function resolveBuilderMirror({ noMirrorDetect = false } = {}) {
 // Resolve + mutate process.env so the next child process inherits it.
 // Library-style entry point for build-all.mjs.
 // ---------------------------------------------------------------------------
-export async function applyBuilderMirror({ noMirrorDetect = false } = {}) {
-  const mirror = await resolveBuilderMirror({ noMirrorDetect });
+export async function applyBuilderMirror({ noMirrorDetect = false, githubOnly = false } = {}) {
+  const mirror = await resolveBuilderMirror({ noMirrorDetect, githubOnly });
   if (mirror.url) {
     process.env.ELECTRON_BUILDER_BINARIES_MIRROR = mirror.url;
     // Also set the NPM_CONFIG_ variant — app-builder-bin accepts both,
@@ -169,13 +180,14 @@ async function main() {
   const sepIdx = argv.indexOf('--');
   const cliArgs = sepIdx >= 0 ? argv.slice(sepIdx + 1) : [];
   const noMirrorDetect = argv.includes('--no-mirror-detect');
+  const githubOnly = argv.includes('--github-only');
 
   if (cliArgs.length === 0) {
-    warn('usage: node scripts/_mirror.mjs [--no-mirror-detect] -- <cmd> [args...]');
+    warn('usage: node scripts/_mirror.mjs [--no-mirror-detect | --github-only] -- <cmd> [args...]');
     process.exit(2);
   }
 
-  await applyBuilderMirror({ noMirrorDetect });
+  await applyBuilderMirror({ noMirrorDetect, githubOnly });
 
   const child = spawn(cliArgs[0], cliArgs.slice(1), {
     stdio: 'inherit',

@@ -4,11 +4,11 @@
 
 // 推荐顺序（在下拉中置顶）
 export const RECOMMENDED = [
-  'modelbus','openai', 'deepseek', 'anthropic', 'grok',
-  'openrouter', 'minimax', 'groq',
-  'xai', 
-  'moonshot', 'alibaba', 
-  'ollama', 'custom',
+  'deepseek', "zhipuai",'minimax', 'modelbus',
+  'moonshotai', "stepfun",
+  'moonshot', 'alibaba-cn',
+  'ollama', 'openai', 'anthropic',
+  'openrouter','custom',
 ];
 
 // models.dev 中不存在的特殊提供商
