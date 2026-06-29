@@ -34,8 +34,8 @@
 - [🗺️ Дорожная карта](#%EF%B8%8F-дорожная-карта)
 - [🤝 Участие в разработке](#-участие-в-разработке)
 - [📄 Лицензия](#-лицензия)
-- [🙏 Благодарности](#-благодарности)
 - [🌟 Star History](#-star-history)
+- [🙏 Благодарности](#-благодарности)
 
 ---
 
@@ -470,19 +470,6 @@ dragonclaw/
 
 ---
 
-## 🙏 Благодарности
-
-Проект создан на плечах гигантов:
-
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Electron](https://www.electronjs.org/)
-- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
-- [Pinia](https://pinia.vuejs.org/)
-- [OpenClaw](https://example.com/openclaw)
-
-
----
 
 ## 🌟 Star History
 
@@ -495,3 +482,17 @@ dragonclaw/
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
  </picture>
 </a>
+
+
+---
+
+## 🙏 Благодарности
+
+Проект создан на плечах гигантов:
+
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Electron](https://www.electronjs.org/)
+- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
+- [Pinia](https://pinia.vuejs.org/)
+- [OpenClaw](https://example.com/openclaw)

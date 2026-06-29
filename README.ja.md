@@ -34,8 +34,8 @@
 - [🗺️ ロードマップ](#%EF%B8%8F-ロードマップ)
 - [🤝 コントリビュート](#-コントリビュート)
 - [📄 ライセンス](#-ライセンス)
-- [🙏 謝辞](#-謝辞)
 - [🌟 Star History](#-star-history)
+- [🙏 謝辞](#-謝辞)
 
 ---
 
@@ -466,19 +466,6 @@ dragonclaw/
 
 ---
 
-## 🙏 謝辞
-
-本プロジェクトは以下すばらしいオープンソースプロジェクトの上に成り立っています：
-
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Electron](https://www.electronjs.org/)
-- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
-- [Pinia](https://pinia.vuejs.org/)
-- [OpenClaw](https://example.com/openclaw)
-
-
----
 
 ## 🌟 Star History
 
@@ -491,3 +478,17 @@ dragonclaw/
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
  </picture>
 </a>
+
+
+---
+
+## 🙏 謝辞
+
+本プロジェクトは以下すばらしいオープンソースプロジェクトの上に成り立っています：
+
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Electron](https://www.electronjs.org/)
+- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
+- [Pinia](https://pinia.vuejs.org/)
+- [OpenClaw](https://example.com/openclaw)

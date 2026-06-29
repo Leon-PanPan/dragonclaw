@@ -34,8 +34,8 @@
 - [🗺️ خارطة الطريق](#%EF%B8%8F-خارطة-الطريق)
 - [🤝 إرشادات المساهمة](#-إرشادات-المساهمة)
 - [📄 الرخصة](#-الرخصة)
-- [🙏 شكر وتقدير](#-شكر-وتقدير)
 - [🌟 Star History](#-star-history)
+- [🙏 شكر وتقدير](#-شكر-وتقدير)
 
 ---
 
@@ -470,19 +470,6 @@ dragonclaw/
 
 ---
 
-## 🙏 شكر وتقدير
-
-بُني المشروع على أكتاف عمالقة:
-
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Electron](https://www.electronjs.org/)
-- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
-- [Pinia](https://pinia.vuejs.org/)
-- [OpenClaw](https://example.com/openclaw)
-
-
----
 
 ## 🌟 Star History
 
@@ -495,3 +482,17 @@ dragonclaw/
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
  </picture>
 </a>
+
+
+---
+
+## 🙏 شكر وتقدير
+
+بُني المشروع على أكتاف عمالقة:
+
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Electron](https://www.electronjs.org/)
+- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
+- [Pinia](https://pinia.vuejs.org/)
+- [OpenClaw](https://example.com/openclaw)

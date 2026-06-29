@@ -34,8 +34,8 @@
 - [🗺️ Roadmap](#%EF%B8%8F-roadmap)
 - [🤝 Beitragen](#-beitragen)
 - [📄 Lizenz](#-lizenz)
-- [🙏 Danksagungen](#-danksagungen)
 - [🌟 Star History](#-star-history)
+- [🙏 Danksagungen](#-danksagungen)
 
 ---
 
@@ -473,19 +473,6 @@ Dieses Projekt steht unter der [MIT](LICENSE)-Lizenz.
 
 ---
 
-## 🙏 Danksagungen
-
-Gebaut auf den Schultern von Giganten:
-
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Electron](https://www.electronjs.org/)
-- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
-- [Pinia](https://pinia.vuejs.org/)
-- [OpenClaw](https://example.com/openclaw)
-
-
----
 
 ## 🌟 Star History
 
@@ -498,3 +485,17 @@ Gebaut auf den Schultern von Giganten:
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
  </picture>
 </a>
+
+
+---
+
+## 🙏 Danksagungen
+
+Gebaut auf den Schultern von Giganten:
+
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Electron](https://www.electronjs.org/)
+- [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
+- [Pinia](https://pinia.vuejs.org/)
+- [OpenClaw](https://example.com/openclaw)

@@ -34,8 +34,8 @@
 - [🗺️ 路线图](#%EF%B8%8F-路线图)
 - [🤝 贡献指南](#-贡献指南)
 - [📄 许可证](#-许可证)
-- [🙏 致谢](#-致谢)
 - [🌟 Star History](#-star-history)
+- [🙏 致谢](#-致谢)
 
 ---
 
@@ -486,6 +486,22 @@ dragonclaw/
 
 ---
 
+
+## 🌟 Star History
+
+⭐ 如果你喜欢这个项目，欢迎给我们一个 Star！
+
+<a href="https://www.star-history.com/?repos=Leon-PanPan%2Fdragonclaw&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
+ </picture>
+</a>
+
+
+---
+
 ## 🙏 致谢
 
 本项目站在以下优秀开源项目肩膀上：
@@ -496,18 +512,3 @@ dragonclaw/
 - [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
 - [Pinia](https://pinia.vuejs.org/)
 - [OpenClaw](https://example.com/openclaw)
-
-
----
-
-## 🌟 Star History
-
-⭐ If you like this project, please give us a Star!
-
-<a href="https://www.star-history.com/?repos=Leon-PanPan%2Fdragonclaw&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
- </picture>
-</a>
