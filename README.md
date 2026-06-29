@@ -35,6 +35,7 @@
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
+- [🌟 Star History](#-star-history)
 
 ---
 
@@ -501,3 +502,18 @@ Built on the shoulders of giants:
 - [Arco Design Vue](https://arco.design/vue/en-US/docs/start)
 - [Pinia](https://pinia.vuejs.org/)
 - [OpenClaw](https://example.com/openclaw)
+
+
+---
+
+## 🌟 Star History
+
+⭐ If you like this project, please give us a Star!
+
+<a href="https://www.star-history.com/?repos=Leon-PanPan%2Fdragonclaw&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Leon-PanPan/dragonclaw&type=date&legend=top-left" />
+ </picture>
+</a>
