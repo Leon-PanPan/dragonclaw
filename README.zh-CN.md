@@ -309,7 +309,7 @@ pnpm electron:dev
 
 ```bash
 # 打包当前平台
-pnpm dist
+pnpm build:all
 
 # 打包 Windows 客户端
 pnpm build:win
@@ -379,8 +379,6 @@ pnpm build:all:npm
 | `pnpm dev` | 仅启动 Vite 开发服务器 |
 | `pnpm build` | 构建渲染端静态资源到 `renderer/dist/` |
 | `pnpm electron:dev` | 开发模式（Vite + Electron 热更新） |
-| `pnpm dist` | 为当前平台构建可分发安装包 |
-| `pnpm pack` | 仅构建解压目录（用于本地验证） |
 | `pnpm build:win` | 构建 Windows 安装包 |
 | `pnpm build:mac` | 构建 macOS 安装包 |
 | `pnpm build:linux` | 构建 Linux 安装包 |

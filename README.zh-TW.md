@@ -289,7 +289,7 @@ pnpm electron:dev
 
 ```bash
 # 打包目前平台
-pnpm dist
+pnpm build:all
 
 # 打包 Windows 用戶端
 pnpm build:win
@@ -359,8 +359,6 @@ pnpm build:all:npm
 | `pnpm dev` | 僅啟動 Vite 開發伺服器 |
 | `pnpm build` | 建置渲染端靜態資源到 `renderer/dist/` |
 | `pnpm electron:dev` | 開發模式（Vite + Electron 熱更新） |
-| `pnpm dist` | 為目前平台建置可發佈安裝包 |
-| `pnpm pack` | 僅建置解壓縮目錄（用於本地驗證） |
 | `pnpm build:win` | 建置 Windows 安裝包 |
 | `pnpm build:mac` | 建置 macOS 安裝包 |
 | `pnpm build:linux` | 建置 Linux 安裝包 |

@@ -11,19 +11,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently --kill-others --success first \"npm run dev\" \"wait-on http-get://127.0.0.1:5177 --timeout 60000 --interval 1000 && electron . --dev --no-sandbox\"",
-    "electron:build": "npm run build && electron-builder",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux",
+    "build:win": "npm run build && node scripts/_mirror.mjs -- electron-builder --win",
+    "build:mac": "npm run build && node scripts/_mirror.mjs -- electron-builder --mac",
+    "build:mac-arm64": "npm run build && node scripts/_mirror.mjs -- electron-builder --mac dmg --arm64",
+    "build:mac-x64": "npm run build && node scripts/_mirror.mjs -- electron-builder --mac dmg --x64",
+    "build:linux": "npm run build && node scripts/_mirror.mjs -- electron-builder --linux",
     "build:all": "node scripts/build-all.mjs",
-    "build:all:cross": "npm run build && electron-builder --win --mac --linux",
+    "build:all:cross": "npm run build && node scripts/_mirror.mjs -- electron-builder --win --mac --linux",
     "build:all:dry": "node scripts/build-all.mjs --dry-run",
     "build:all:npm": "node scripts/build-all.mjs --no-vite",
-    "dist:mac": "npm run build && electron-builder --mac dmg",
-    "dist:mac-arm64": "npm run build && electron-builder --mac dmg --arm64",
-    "dist:mac-x64": "npm run build && electron-builder --mac dmg --x64",
     "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
@@ -66,7 +62,13 @@
       "shared/**/*",
       "renderer/dist/**/*",
       "package.json",
-      "!src/renderer/node_modules/**/*"
+      "!src/renderer/node_modules/**/*",
+      "!**/node_modules/**/{CHANGELOG.md,README.md,README,readme.md,readme,*.md,*.markdown}",
+      "!**/node_modules/**/*.{map,ts,tsx,jsx,d.ts,d.mts}",
+      "!**/node_modules/**/{test,__tests__,tests,powered-test,example,examples,docs,doc,coverage}",
+      "!**/node_modules/**/*.{less,sass,scss,styl}",
+      "!**/node_modules/.bin",
+      "!**/node_modules/**/{.editorconfig,.eslintrc*,.prettierrc*,.nycrc*,babel.config*,rollup.config*,webpack.config*,jest.config*,tsconfig*,.babelrc}"
     ],
     "win": {
       "target": [

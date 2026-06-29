@@ -312,7 +312,7 @@ pnpm electron:dev
 
 ```bash
 # Build for the current platform
-pnpm dist
+pnpm build:all
 
 # Build a Windows client
 pnpm build:win
@@ -385,8 +385,6 @@ pnpm build:all:npm
 | `pnpm dev` | Start the Vite dev server only |
 | `pnpm build` | Build the renderer into `renderer/dist/` |
 | `pnpm electron:dev` | Dev mode (Vite + Electron with HMR) |
-| `pnpm dist` | Build a distributable installer for the current platform |
-| `pnpm pack` | Build an unpacked directory (for local inspection) |
 | `pnpm build:win` | Build a Windows installer |
 | `pnpm build:mac` | Build a macOS installer |
 | `pnpm build:linux` | Build a Linux installer |

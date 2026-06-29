@@ -44,8 +44,8 @@ import { spawn, spawnSync as nodeSpawnSync } from 'child_process';
 import { existsSync, readdirSync, rmSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import net from 'net';
 import process from 'process';
+import { applyBuilderMirror } from './_mirror.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = resolve(__filename, '..');
@@ -291,92 +291,13 @@ function fmtSize(bytes) {
 }
 
 // ---------------------------------------------------------------------------
-// Mirror auto-detection for electron-builder's binary downloads.
-//
-// Why this exists
-// ---------------
-// `electron-builder` (via its `app-builder-bin` Go binary) downloads the
-// Electron prebuilt zips itself when packaging — it does NOT reuse the
-// binary we placed at `node_modules/.../electron/dist/`. So the postinstall
-// mirror logic does not save us here.
-//
-// The Go binary honours two env vars (confirmed by `strings` on the binary):
-//   * `ELECTRON_BUILDER_BINARIES_MIRROR`
-//   * `NPM_CONFIG_ELECTRON_BUILDER_BINARIES_MIRROR`
-// When set, the URL pattern switches from
-//   https://github.com/electron/electron/releases/download/v<VER>/<FILE>
-// to
-//   <MIRROR>/v<VER>/<FILE>
-// We probe the candidate mirrors, pick the fastest reachable one, and inject
-// the env var into every `electron-builder` invocation.
-//
-// Skip detection with `--no-mirror-detect` or by exporting
-// `ELECTRON_BUILDER_BINARIES_MIRROR=...` yourself.
+// Mirror auto-detection lives in `scripts/_mirror.mjs` (shared with the
+// `build:win` / `build:mac` / `build:linux` shim scripts in package.json).
+// We just call it here and propagate the env var into every electron-builder
+// invocation. The shim uses the same probe catalogue, so behaviour stays
+// in sync whether the user invokes `pnpm run build:all` or one of the
+// single-platform scripts.
 // ---------------------------------------------------------------------------
-const BUILDER_MIRRORS = [
-  // npmmirror.com mirrors the full electron release set and is fast from
-  // mainland China. Path layout matches the GitHub layout with a `v` prefix.
-  { id: 'npmmirror', url: 'https://npmmirror.com/mirrors/electron',
-    note: 'Mainland-China-friendly CDN, no rate limit.' },
-  // Official GitHub Releases. Fast in most non-CN regions.
-  { id: 'github',    url: 'https://github.com/electron/electron/releases/download',
-    note: 'Official GitHub Releases. Fast in most non-CN regions.' },
-];
-
-async function probeMirrorRtt(mirror) {
-  // We measure TCP-handshake RTT to the host, not full HTTPS GET RTT.
-  // Why: from some networks (mainland China in particular) the TLS /
-  // HTTP layer will hang indefinitely even when the host is reachable,
-  // and `app-builder-bin` itself will fail the same way. A successful
-  // TCP handshake is therefore a *necessary* condition for the mirror
-  // to be usable, even if not sufficient — but in practice, the hosts
-  // we list all serve HTTPS reliably when they accept the SYN.
-  const u = new URL(mirror.url);
-  return new Promise((resolve) => {
-    const t0 = Date.now();
-    const sock = net.connect({
-      host: u.hostname,
-      port: u.port || 443,
-      family: 4, // force IPv4 — gives the most predictable result across dual-stack networks
-    });
-    const timer = setTimeout(() => { sock.destroy(); resolve(Infinity); }, 2500);
-    sock.once('connect', () => { clearTimeout(timer); sock.destroy(); resolve(Date.now() - t0); });
-    sock.once('error',   () => { clearTimeout(timer); sock.destroy(); resolve(Infinity); });
-  });
-}
-
-async function rankBuilderMirrors() {
-  const ranked = await Promise.all(
-    BUILDER_MIRRORS.map(async (m) => ({ mirror: m, rtt: await probeMirrorRtt(m) }))
-  );
-  return ranked.sort((a, b) => a.rtt - b.rtt).map((r) => r.mirror);
-}
-
-async function resolveBuilderMirror({ noMirrorDetect }) {
-  // 1. Honour explicit user override (env var or command line).
-  const explicit = process.env.ELECTRON_BUILDER_BINARIES_MIRROR;
-  if (explicit && explicit.trim() !== '') {
-    info(`using pinned electron-builder mirror: ${explicit}`);
-    return { url: explicit.trim(), source: 'env' };
-  }
-  if (noMirrorDetect) {
-    info('--no-mirror-detect: skipping probe, electron-builder will use the default (GitHub)');
-    return { url: null, source: 'default' };
-  }
-  // 2. Probe and pick.
-  info('probing electron-builder mirror reachability…');
-  const ranked = await rankBuilderMirrors();
-  const summary = ranked
-    .map((m) => `${m.id}${m.rtt === Infinity ? ' (timeout)' : ` (${m.rtt}ms)`}`)
-    .join(' → ');
-  info(`  ↳ mirror order: ${summary}`);
-  const winner = ranked[0];
-  if (!winner || winner.rtt === Infinity) {
-    warn('all mirrors timed out — falling back to the default (GitHub). If you are behind a firewall, set ELECTRON_BUILDER_BINARIES_MIRROR=… manually.');
-    return { url: null, source: 'default' };
-  }
-  return { url: winner.url, source: winner.id };
-}
 
 // ---------------------------------------------------------------------------
 // Main
@@ -423,9 +344,9 @@ async function main() {
     }
   }
 
-  // Decide which electron-builder binary mirror to use. The probe is fast
-  // (≤ 2.5s per mirror, run in parallel) and skipped under --dry-run above.
-  const mirror = await resolveBuilderMirror({ noMirrorDetect: args.noMirrorDetect });
+  // Decide which electron-builder binary mirror to use. The probe lives in
+  // `scripts/_mirror.mjs` (shared with build:win / build:mac / build:linux).
+  const mirror = await applyBuilderMirror({ noMirrorDetect: args.noMirrorDetect });
   const extraEnv = mirror.url
     ? { ELECTRON_BUILDER_BINARIES_MIRROR: mirror.url }
     : null;
