@@ -269,13 +269,24 @@ watch(selectedModel, (newModel, oldModel) => {
 })
 
 // 监听 WebSocket 连接状态，连接成功后加载数据
-watch(wsConnected, async (connected) => {
-  if (connected) {
-    await Promise.all([loadAgentList(), loadSessions()])
-    if (sessions.value.length > 0) switchSession(sessions.value[0].id)
-    else if (agentList.value.length > 0) autoCreateSession(agentList.value[0].id)
-  }
-})
+// 🔧 修复: 一次性触发 + watch 立即 stop。WS 重连抖动不会重复加载。
+let _initDataTriggered = false
+const triggerInitialDataLoad = async () => {
+  if (_initDataTriggered) return
+  _initDataTriggered = true
+  await Promise.all([loadAgentList(), loadSessions()])
+  if (sessions.value.length > 0) switchSession(sessions.value[0].id)
+  else if (agentList.value.length > 0) autoCreateSession(agentList.value[0].id)
+}
+if (wsConnected.value) {
+  triggerInitialDataLoad()
+} else {
+  const stopWatchConn = watch(wsConnected, (connected) => {
+    if (!connected) return
+    stopWatchConn()
+    triggerInitialDataLoad()
+  })
+}
 
 const handleWsMessage = (data) => {
   _sessionMsgSeq++
@@ -726,14 +737,9 @@ const initSessionView = async () => {
     _wsUnsubscribe = wsManager.subscribe(handleWsMessage)
     console.debug('SessionView 订阅 WebSocket 消息')
 
-    if (wsManager.state.value === ConnectionState.CONNECTED) {
-      console.debug('WebSocket 已连接，加载数据...')
-      await Promise.all([loadAgentList(), loadSessions()])
-      if (sessions.value.length > 0) switchSession(sessions.value[0].id)
-      else if (agentList.value.length > 0) autoCreateSession(agentList.value[0].id)
-    } else {
-      console.debug('等待 WebSocket 连接...')
-    }
+    // 🔧 修复: 数据加载交给上面的 _initDataTriggered 一次性 watch 来做（已连接就直接拉，
+    //    否则挂在 wsConnected 上,触发后立即 stop）。这里不再重复加载,避免并发拉两份
+    //    loadAgentList / loadSessions。
 
     scrollToBottom()
   } catch (error) {

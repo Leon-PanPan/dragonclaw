@@ -9,7 +9,12 @@
  *
  * API 返回格式: Record<string, Provider>
  *   Provider: { id, name, api, models: Record<string, Model> }
- *   Model: { id, name, limit: { context, output }, ... }
+ *   Model: { id, name, limit: { context, output }, reasoning, tool_call, attachment, ... }
+ *
+ * 性能优化:
+ *   2.3MB JSON 在渲染主线程同步 parse 会卡 100–200ms。
+ *   这里把 parse 放进 Web Worker（src/renderer/workers/modelsCatalog.worker.js），
+ *   渲染端只持有解析完成的 catalog 引用；并只投影需要的字段。
  */
 import { fileApi } from '@/api/gateway';
 
@@ -20,12 +25,110 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 let _catalog = null;
 let _pending = null;
 let _fallback = null;
+let _worker = null;
+let _workerReqSeq = 0;
+const _workerCallbacks = new Map();
+
+function getWorker() {
+  if (_worker) return _worker;
+  if (typeof Worker === 'undefined') return null;
+  try {
+    _worker = new Worker(new URL('../workers/modelsCatalog.worker.js', import.meta.url), {
+      type: 'module',
+    });
+  } catch (e) {
+    console.warn('[models.dev] Worker 不可用，回退到主线程 parse:', e.message);
+    _worker = null;
+    return null;
+  }
+  _worker.onmessage = (e) => {
+    const { type, catalog, elapsedMs, error } = e.data || {};
+    if (type === 'parsed') {
+      console.log(`[models.dev] Worker 解析完成 ${elapsedMs?.toFixed?.(0) || elapsedMs}ms, providers=${Object.keys(catalog || {}).length}`);
+      const pending = _workerCallbacks.get('parsed');
+      _workerCallbacks.delete('parsed');
+      if (pending) pending.resolve(catalog);
+    } else if (type === 'error') {
+      const pending = _workerCallbacks.get('error') || _workerCallbacks.get('parsed');
+      _workerCallbacks.delete('parsed');
+      _workerCallbacks.delete('error');
+      if (pending) pending.reject(new Error(error || 'unknown worker error'));
+    }
+  };
+  _worker.onerror = (err) => {
+    console.warn('[models.dev] Worker 错误，回退到主线程 parse:', err.message);
+    _worker.terminate();
+    _worker = null;
+    const pending = _workerCallbacks.get('parsed');
+    _workerCallbacks.delete('parsed');
+    if (pending) pending.reject(new Error(err.message || 'worker error'));
+  };
+  return _worker;
+}
+
+function parseInWorker(content) {
+  return new Promise((resolve, reject) => {
+    const w = getWorker();
+    if (!w) {
+      // 回退：主线程同步 parse
+      try {
+        const raw = JSON.parse(content);
+        resolve(projectCatalog(raw));
+      } catch (e) { reject(e); }
+      return;
+    }
+    _workerCallbacks.set('parsed', { resolve, reject });
+    w.postMessage({ type: 'parse', content });
+  });
+}
+
+// 字段投影（worker / fallback 共用），与 worker 内的 slim* 保持一致
+const KEEP_MODEL_KEYS = ['id', 'name', 'attachment', 'reasoning', 'reasoning_options', 'tool_call', 'limit'];
+function slimModel(m) {
+  if (!m || typeof m !== 'object' || !m.id || !m.name) return null;
+  const sm = {};
+  for (const k of KEEP_MODEL_KEYS) if (m[k] !== undefined) sm[k] = m[k];
+  if (sm.limit && typeof sm.limit === 'object') {
+    sm.limit = {
+      context: typeof sm.limit.context === 'number' ? sm.limit.context : 0,
+      output: typeof sm.limit.output === 'number' ? sm.limit.output : 0,
+    };
+  } else {
+    sm.limit = { context: 0, output: 0 };
+  }
+  return sm;
+}
+function slimProvider(p) {
+  if (!p || typeof p !== 'object' || !p.id || !p.name) return null;
+  const models = {};
+  if (p.models && typeof p.models === 'object') {
+    for (const [mid, m] of Object.entries(p.models)) {
+      const sm = slimModel(m);
+      if (sm) models[mid] = sm;
+    }
+  }
+  return {
+    id: p.id,
+    name: p.name,
+    api: typeof p.api === 'string' ? p.api : '',
+    models,
+  };
+}
+function projectCatalog(raw) {
+  const catalog = {};
+  for (const [pid, p] of Object.entries(raw || {})) {
+    const sp = slimProvider(p);
+    if (sp) catalog[pid] = sp;
+  }
+  return catalog;
+}
 
 async function loadFallback() {
-  if (!_fallback) {
+  if (_fallback === null) {
     try {
-      _fallback = (await import('./models-dev-fallback.json')).default;
-    } catch {
+      const mod = await import('./models-dev-fallback.json');
+      _fallback = projectCatalog(mod.default || mod);
+    } catch (e) {
       _fallback = {};
     }
   }
@@ -54,7 +157,8 @@ export async function ensureCatalog() {
 
         const readResult = await fileApi.read({ filename: CACHE_FILE });
         if (readResult?.success && readResult.content) {
-          cached = JSON.parse(readResult.content);
+          // 在 Worker 里 parse（避免主线程卡顿）；Worker 不可用时回退主线程
+          cached = await parseInWorker(readResult.content);
         }
       } catch { /* 无缓存或读取失败 */ }
 
@@ -82,11 +186,17 @@ export async function ensureCatalog() {
       const raw = typeof fetchResult.data === 'string'
         ? fetchResult.data
         : JSON.stringify(fetchResult.data);
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      // 解析（也在 Worker 里）+ 字段投影
+      const data = typeof raw === 'string'
+        ? await parseInWorker(raw)
+        : projectCatalog(raw);
 
-      // 3. 写本地缓存
+      // 3. 写本地缓存（写原始完整数据，让下次读 cache 时仍能正确 parse）
       try {
-        await fileApi.write({ filename: CACHE_FILE, content: JSON.stringify(data) });
+        await fileApi.write({
+          filename: CACHE_FILE,
+          content: typeof raw === 'string' ? raw : JSON.stringify(raw),
+        });
       } catch (e) {
         console.warn('[models.dev] 写缓存失败:', e.message);
       }

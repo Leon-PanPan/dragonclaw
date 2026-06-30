@@ -594,6 +594,13 @@ class WebSocketManager {
       // 记录接收到的消息
       this.logWsMessage('receive', data);
 
+      // 🔧 [WS-DIAG] 临时诊断日志（验证 hello-ok 广播修复后可清理）
+      console.debug('[WS-DIAG] handleMessage',
+        'type=', data.type,
+        'event=', data.event,
+        'payload.type=', data.payload?.type,
+        'subscribers=', this._subscribers.size);
+
       // 打印 agent/chat 事件的完整结构用于调试思考内容字段
       if (data.type === 'event' && (data.event === 'agent' || data.event === 'chat')) {
         console.info('[WS-RAW]', data.event, 'stream:', data.payload?.stream, 'state:', data.payload?.state,
@@ -619,7 +626,12 @@ class WebSocketManager {
 
       // 处理 hello-ok
       if (data.type === 'res' && data.ok && data.payload?.type === 'hello-ok') {
-        // console.log('握手成功!');
+        // 🔧 [WS-DIAG] hello-ok 到达时打印（修复时可观察是否在广播后正常调用 _subscribers）
+        console.debug('[WS-DIAG] hello-ok arrived', {
+          stateBefore: this.state.value,
+          subscribersNow: this._subscribers.size,
+          pendingNow: this.pendingRequests.size,
+        });
         this.reconnectAttempts = 0;
         this.setState(ConnectionState.CONNECTED);
         this.startHeartbeat();
@@ -628,6 +640,11 @@ class WebSocketManager {
           this.connectResolve = null;
           this.connectReject = null;
         }
+        // 🔧 修复: hello-ok 也广播给 _subscribers,
+        //    让 wait-for-hello-ok 的逻辑（withConnection / whenReady 的订阅者）能放行,
+        //    否则 15s 超时前所有被慢路径挂起的 promiseFactory 都无法执行,
+        //    出现「页面长时间卡在骨架屏」「看不到 ws 请求」等并发副作用。
+        this._subscribers.forEach(fn => fn(data));
         return;
       }
 

@@ -560,16 +560,28 @@ function formatTokenCount(n) {
   return (n / 1000000).toFixed(1) + 'M';
 }
 
-onMounted(async () => {
+onMounted(() => {
   unsubscribe = wsManager.subscribe(handleWsMessage);
   elapsedTimer = setInterval(updateElapsedTimes, 1000);
-  await loadAllData();
-  pageLoading.value = false;
-});
 
-watch(wsConnected, async (connected) => {
-  if (connected) {
-    await loadAllData();
+  // 🔧 修复: 一次性触发 + watch 立即 stop。
+  //    原来: 顶层 watch(wsConnected) 在每次连接成功时都 loadAllData 一次,
+  //         WS 一抖动就重复拉,既浪费也容易引入竞态。
+  //    现在: 已连接就直接拉;否则挂一个一次性 watch,触发后立即 stop。
+  let triggered = false
+  const fire = () => {
+    if (triggered) return
+    triggered = true
+    loadAllData().finally(() => { pageLoading.value = false });
+  }
+  if (wsConnected.value) {
+    fire()
+  } else {
+    const stop = watch(wsConnected, (connected) => {
+      if (!connected) return
+      stop()
+      fire()
+    })
   }
 });
 

@@ -10,11 +10,9 @@ ipcMain.handle(CH.SAVE_FILE, async (event, { filename, content }) => {
     const filePath = path.join(userDataPath, filename || 'skills-cache.json');
 
     const dirPath = path.dirname(filePath);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
+    await fs.promises.mkdir(dirPath, { recursive: true });
 
-    fs.writeFileSync(filePath, content, 'utf-8');
+    await fs.promises.writeFile(filePath, content, 'utf-8');
     console.log(`文件保存成功: ${filePath}, 大小: ${content.length} 字节`);
 
     return { success: true, filePath };
@@ -36,39 +34,41 @@ ipcMain.handle(CH.READ_FILE, async (event, { filename, filePath: customPath, max
       filePath = path.join(userDataPath, filename || 'skills-cache.json');
     }
 
-    if (!fs.existsSync(filePath)) {
+    const exists = await fs.promises.access(filePath).then(() => true).catch(() => false);
+    if (!exists) {
       return { success: false, error: '文件不存在', exists: false };
     }
 
-    const stats = fs.statSync(filePath);
-    console.log(`读取文件: ${filePath}, 大小: ${stats.size} 字节`);
+    const stats = await fs.promises.stat(filePath);
 
     const maxSize = maxBytes || (stats.size > 5 * 1024 * 1024 ? 5 * 1024 * 1024 : stats.size);
     if (stats.size > 5 * 1024 * 1024) {
       console.warn(`警告: 检测到大文件,限制读取大小至 ${maxSize} 字节`);
     }
 
-    const fd = fs.openSync(filePath, 'r');
-    const buffer = Buffer.alloc(maxSize);
-    const bytesRead = fs.readSync(fd, buffer, 0, maxSize, 0);
-    fs.closeSync(fd);
+    const fd = await fs.promises.open(filePath, 'r');
+    try {
+      const buffer = Buffer.alloc(maxSize);
+      const { bytesRead } = await fd.read(buffer, 0, maxSize, 0);
+      let contentBuffer = buffer.slice(0, bytesRead);
 
-    let contentBuffer = buffer.slice(0, bytesRead);
+      if (contentBuffer.length >= 3 && contentBuffer[0] === 0xEF && contentBuffer[1] === 0xBB && contentBuffer[2] === 0xBF) {
+        console.log('检测到UTF-8 BOM,已移除');
+        contentBuffer = contentBuffer.slice(3);
+      }
 
-    if (contentBuffer.length >= 3 && contentBuffer[0] === 0xEF && contentBuffer[1] === 0xBB && contentBuffer[2] === 0xBF) {
-      console.log('检测到UTF-8 BOM,已移除');
-      contentBuffer = contentBuffer.slice(3);
+      const content = contentBuffer.toString('utf8');
+
+      return {
+        success: true,
+        content: content,
+        filePath,
+        size: stats.size,
+        truncated: maxSize < stats.size
+      };
+    } finally {
+      await fd.close();
     }
-
-    const content = contentBuffer.toString('utf8');
-
-    return {
-      success: true,
-      content: content,
-      filePath,
-      size: stats.size,
-      truncated: maxSize < stats.size
-    };
   } catch (error) {
     console.error('读取文件失败:', error);
     return { success: false, error: error.message };
@@ -80,7 +80,7 @@ ipcMain.handle(CH.FILE_EXISTS, async (event, { filename }) => {
   try {
     const userDataPath = app.getPath('userData');
     const filePath = path.join(userDataPath, filename || 'skills-cache.json');
-    const exists = fs.existsSync(filePath);
+    const exists = await fs.promises.access(filePath).then(() => true).catch(() => false);
 
     return { success: true, exists, filePath };
   } catch (error) {
@@ -95,11 +95,12 @@ ipcMain.handle(CH.FILE_MTIME, async (event, { filename }) => {
     const userDataPath = app.getPath('userData');
     const filePath = path.join(userDataPath, filename || 'skills-cache.json');
 
-    if (!fs.existsSync(filePath)) {
+    const exists = await fs.promises.access(filePath).then(() => true).catch(() => false);
+    if (!exists) {
       return { success: false, error: '文件不存在', exists: false };
     }
 
-    const stats = fs.statSync(filePath);
+    const stats = await fs.promises.stat(filePath);
     return {
       success: true,
       mtime: stats.mtime.getTime(),
@@ -121,12 +122,13 @@ ipcMain.handle(CH.WORKSPACE_READ, async (event, { workspace, filename }) => {
 
     console.log(`[openclaw-read-workspace-file] 读取: ${filePath}`);
 
-    if (!fs.existsSync(filePath)) {
+    const exists = await fs.promises.access(filePath).then(() => true).catch(() => false);
+    if (!exists) {
       return { success: false, error: '文件不存在', exists: false };
     }
 
-    const stats = fs.statSync(filePath);
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const stats = await fs.promises.stat(filePath);
+    const content = await fs.promises.readFile(filePath, 'utf-8');
 
     return {
       success: true,
@@ -150,11 +152,9 @@ ipcMain.handle(CH.WORKSPACE_WRITE, async (event, { workspace, filename, content 
 
     console.log(`[openclaw-write-workspace-file] 写入: ${filePath}`);
 
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
+    await fs.promises.mkdir(dirPath, { recursive: true });
 
-    fs.writeFileSync(filePath, content, 'utf-8');
+    await fs.promises.writeFile(filePath, content, 'utf-8');
 
     return { success: true, filePath };
   } catch (error) {
@@ -201,16 +201,14 @@ ipcMain.handle(CH.WRITE_WS_LOG, async (event, { direction, data }) => {
     const logDir = path.join(homeDir, '.dragonclaw');
     const logFile = path.join(logDir, 'dragonclaw.log');
 
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
+    await fs.promises.mkdir(logDir, { recursive: true });
 
     const logEntry = {
       time: new Date().toISOString(),
       direction,
       data
     };
-    fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n', 'utf-8');
+    await fs.promises.appendFile(logFile, JSON.stringify(logEntry) + '\n', 'utf-8');
     return { success: true };
   } catch (e) {
     console.error('[writeWsLog] 写入失败:', e.message);

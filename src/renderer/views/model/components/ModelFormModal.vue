@@ -56,6 +56,15 @@
           <span class="mf-label">基础 URL</span>
           <a-input v-model="form.base_url" placeholder="例如: https://api.deepseek.com" style="flex:1" />
         </div>
+
+        <div class="mf-row">
+          <span class="mf-label">API 类型</span>
+          <a-select v-model="form.api" style="flex:1" :trigger-props="{ autoFitPopupMinWidth: true }">
+            <a-option v-for="opt in API_OPTIONS" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </a-option>
+          </a-select>
+        </div>
       </div>
 
       <!-- ▸ 模型列表 -->
@@ -96,7 +105,15 @@ import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import { IconPlus, IconDelete } from '@arco-design/web-vue/es/icon';
 import { ensureCatalog, resolveReasoning, listProviderModels, getCatalog } from '@/utils/models.dev.js';
-import { RECOMMENDED, EXTRA_PROVIDERS, getProviderNameSync, getExtraBaseUrl } from './recommendedProviders.js';
+import {
+  RECOMMENDED,
+  EXTRA_PROVIDERS,
+  getProviderNameSync,
+  getExtraBaseUrl,
+  API_OPTIONS,
+  DEFAULT_API,
+  guessProviderApi,
+} from './recommendedProviders.js';
 
 const props = defineProps({
   visible: Boolean,
@@ -115,6 +132,7 @@ const form = reactive({
   provider: 'deepseek',
   api_key: '',
   base_url: '',
+  api: DEFAULT_API,
   models: [{ name: '', id: '', contextWindow: 32768 }],
 });
 
@@ -179,12 +197,14 @@ watch(() => props.visible, (v) => {
     form.provider = m.provider || 'deepseek';
     form.api_key = m.api_key || '';
     form.base_url = m.base_url || '';
+    form.api = m.api || guessProviderApi(form.provider, catalog.value);
     form.models = [{ name: m.name || '', id: m.id || '', contextWindow: m.context_window || 32768 }];
   } else {
     form.provider = 'deepseek';
     form.api_key = '';
     const defaultBaseUrl = getExtraBaseUrl('deepseek') || catalog.value?.['deepseek']?.api || '';
     form.base_url = defaultBaseUrl;
+    form.api = guessProviderApi('deepseek', catalog.value);
     setDefaultModels('deepseek');
   }
 });
@@ -194,6 +214,7 @@ async function onProviderChange(id) {
   const extra = EXTRA_PROVIDERS[id];
   if (extra) {
     form.base_url = extra.baseUrl || '';
+    form.api = extra.api || guessProviderApi(id, catalog.value);
     if (!props.isEdit) form.models = [{ name: '', id: '', contextWindow: 32768 }];
     return;
   }
@@ -205,6 +226,7 @@ async function onProviderChange(id) {
     const entry = catalog.value[id];
     if (entry) {
       form.base_url = entry.api || '';
+      form.api = guessProviderApi(id, catalog.value);
       if (!props.isEdit) setDefaultModels(id);
     }
   } finally {
@@ -236,6 +258,7 @@ function handleSubmit() {
     provider: form.provider,
     api_key: form.api_key,
     base_url: form.base_url,
+    api: form.api || DEFAULT_API,
     models: validModels.map(m => ({
       name: m.name || m.id,
       id: m.id || m.name,

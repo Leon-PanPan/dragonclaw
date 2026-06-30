@@ -3,6 +3,7 @@ import { Message } from '@arco-design/web-vue'
 import { configAdminApi, configFromSnapshot } from '@/api/admin-rpc'
 import { wsManager, ConnectionState } from '@/core/websocket/manager'
 import { resolveContextWindow, resolveReasoning, ensureCatalog, getCatalog } from '@/utils/models.dev.js'
+import { DEFAULT_API, guessProviderApi } from './components/recommendedProviders.js'
 import { useModelStore } from '@/stores/modelStore'
 
 const wsConnected = computed(() => wsManager.state?.value === ConnectionState.CONNECTED)
@@ -43,7 +44,7 @@ export function useModel() {
         map[p] = {
           provider: p,
           providerName: catalog[p]?.name || p,
-          providerLogo: `https://models.dev/logos/${p}.svg`,
+          providerLogo: `//models.dev/logos/${p}.svg`,
           models: [],
         }
       }
@@ -65,38 +66,76 @@ export function useModel() {
   const defaultModelId = ref('')
 
   const loadModels = async () => {
-    try {
-      // 每次进入模型界面都重新拉取（即使之前成功过），保证数据是最新的
-      // store 内部 promise 去重，所以不会并发拉多次
-      await modelStore.refreshModels()
-      const catalog = await ensureCatalog()
+    const _now = () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()
+    const t0 = _now()
+    console.info('[MODEL-DIAG] loadModels enter')
 
-      // 从 config 读取每个 provider 的 api_key / base_url，用于编辑表单回显
-      let providerSecrets = {}
-      try {
-        const snap = await configAdminApi.get()
-        const cfg = configFromSnapshot(snap)
+    // 🔧 修复: 不串行化。第一步只拉模型列表（这是骨架屏之后第一眼能渲染的内容），
+    //    catalog 与 config(secrets) 改为后台并行加载，加载完再合并一次。
+    //    这样骨架屏最多只需要等 store 列表（ms 级），不会再被 catalog
+    //    parse 或 config WS 拖到 15s+。
+
+    // 1) 阻塞路径：拉模型列表。store 内部有 _loadPromise 去重。
+    let modelsOk = false
+    try {
+      await modelStore.refreshModels()
+      modelsOk = (modelStore.models || []).length > 0
+    } catch (e) {
+      console.warn('[MODEL-DIAG] refreshModels rejected:', e?.message)
+    }
+
+    // 2) 拿到任何一条模型，立即先渲染（api_key / base_url 可能为空，合并完成后会再渲染一次）
+    if (modelsOk) {
+      const catalogSnapshot = getCatalog() || {}
+      const storeModels = modelStore.models || []
+      models.value = storeModels.map(m => ({
+        id: m.id, name: m.name || m.id, provider: m.provider,
+        api_key: '', base_url: '',
+        api: guessProviderApi(m.provider, catalogSnapshot),
+        context_window: m.contextWindow || 0,
+        max_tokens: 0, enabled: true,
+        reasoning: m.reasoning ?? false,
+        avg_response_time: 0, success_rate: 0, cost_per_1k_tokens: 0,
+        updating: false, testing: false,
+      }))
+      console.info(`[MODEL-DIAG] first render at +${(_now() - t0).toFixed(0)}ms count=${models.value.length}`)
+    }
+
+    // 3) 后台：catalog + config 并行加载，加载完再合并 secrets 到 models
+    Promise.allSettled([
+      ensureCatalog().catch(() => null),
+      configAdminApi.get().catch(() => null),
+    ]).then(([catRes, cfgRes]) => {
+      const catalog = (catRes.status === 'fulfilled' && catRes.value) || (getCatalog() || {})
+      const snap = cfgRes.status === 'fulfilled' ? cfgRes.value : null
+      const cfg = snap ? configFromSnapshot(snap) : null
+      if (cfg && snap) {
         configHash.value = snap?.hash || ''
         currentConfig.value = cfg
-        defaultModelId.value = cfg?.agents?.defaults?.model?.primary || ''
-        const providers = cfg?.models?.providers || {}
-        for (const [pid, pconf] of Object.entries(providers)) {
+        if (!defaultModelId.value) {
+          defaultModelId.value = cfg?.agents?.defaults?.model?.primary || ''
+        }
+      }
+
+      // 合并 secrets
+      const providerSecrets = {}
+      if (cfg?.models?.providers) {
+        for (const [pid, pconf] of Object.entries(cfg.models.providers)) {
           providerSecrets[pid] = {
             api_key: pconf.apiKey || '',
             base_url: pconf.baseUrl || '',
+            api: pconf.api || '',
           }
         }
-      } catch (_) {
-        // 忽略，api_key/base_url 留空
       }
 
-      // 合并：store 数据 + config 中的 secrets → 本地 models
       const storeModels = modelStore.models || []
       models.value = storeModels.map(m => {
         const secret = providerSecrets[m.provider] || {}
         return {
           id: m.id, name: m.name || m.id, provider: m.provider,
           api_key: secret.api_key, base_url: secret.base_url,
+          api: secret.api || guessProviderApi(m.provider, catalog),
           context_window: m.contextWindow || 0,
           max_tokens: 0, enabled: true,
           reasoning: m.reasoning ?? false,
@@ -104,15 +143,13 @@ export function useModel() {
           updating: false, testing: false,
         }
       })
-
-      // 默认模型回退：没有则取第一个
       if (!defaultModelId.value) {
         defaultModelId.value = models.value[0]?.id || ''
       }
-    } catch (e) {
-      console.error('加载模型失败:', e)
-      Message.error('加载模型列表失败: ' + (e.message || '未知错误'))
-    }
+      console.info(`[MODEL-DIAG] post-merge done at +${(_now() - t0).toFixed(0)}ms count=${models.value.length}`)
+    })
+
+    console.info(`[MODEL-DIAG] loadModels exit took=${(_now() - t0).toFixed(0)}ms, pageLoading will close now`)
   }
 
   const showAddModelModal = () => {
@@ -130,16 +167,17 @@ export function useModel() {
     modelModalVisible.value = true
   }
 
-  const handleModelFormSubmit = async ({ provider, api_key, base_url, models: formModels, isEdit }) => {
+  const handleModelFormSubmit = async ({ provider, api_key, base_url, api, models: formModels, isEdit }) => {
     try {
+      const resolvedApi = api || DEFAULT_API
       if (isEdit) {
         const fm = formModels[0] || {}
         const i = modelModalEditingIndex.value
         if (i >= 0) {
-          models.value[i] = { ...models.value[i], provider, api_key, base_url, name: fm.name, id: fm.id, context_window: fm.contextWindow, updating: false, testing: false }
+          models.value[i] = { ...models.value[i], provider, api_key, base_url, api: resolvedApi, name: fm.name, id: fm.id, context_window: fm.contextWindow, updating: false, testing: false }
         }
       }
-      await saveConfigToOpenClaw(isEdit ? null : formModels.map(fm => ({ ...fm, provider, api_key, base_url })))
+      await saveConfigToOpenClaw(isEdit ? null : formModels.map(fm => ({ ...fm, provider, api_key, base_url, api: resolvedApi })))
       await loadModels()
       modelModalVisible.value = false
       Message.success(isEdit ? '模型更新成功' : `已添加 ${formModels.length} 个模型`)
@@ -169,8 +207,17 @@ export function useModel() {
       editModel(first)
     } else {
       // 没有模型时也允许编辑（只编辑提供商信息）
+      const catalog = getCatalog() || {}
       modelModalEditingIndex.value = -1
-      modelModalEditingModel.value = { provider: providerId, api_key: '', base_url: '', name: '', id: '', context_window: 32768 }
+      modelModalEditingModel.value = {
+        provider: providerId,
+        api_key: '',
+        base_url: '',
+        api: guessProviderApi(providerId, catalog),
+        name: '',
+        id: '',
+        context_window: 32768,
+      }
       modelModalIsEdit.value = true
       modelModalVisible.value = true
     }
@@ -251,13 +298,21 @@ export function useModel() {
       for (const m of allModels) {
         if (m.enabled === false) continue
         const pname = m.provider
+        // 首个遇到该 provider: 初始化 + 重置 models/api/apiKey/baseUrl
         if (!nc.models.providers[pname]) {
-          nc.models.providers[pname] = { models: [], apiKey: m.api_key, baseUrl: m.base_url }
+          nc.models.providers[pname] = {
+            models: [],
+            apiKey: m.api_key || '',
+            baseUrl: m.base_url || '',
+            api: m.api || DEFAULT_API,
+          }
           seenProviders.add(pname);
-        }
-        // 首次遇到该 provider 时重置 models 数组（旧条目已不在 allModels 中）
-        if (!seenProviders.has(pname)) {
+        } else if (!seenProviders.has(pname)) {
+          // 该 provider 已存在 cfg 中（旧条目），保留原有 secrets，但确保 api 字段存在
           nc.models.providers[pname].models = [];
+          if (m.api_key) nc.models.providers[pname].apiKey = m.api_key;
+          if (m.base_url) nc.models.providers[pname].baseUrl = m.base_url;
+          if (m.api) nc.models.providers[pname].api = m.api || DEFAULT_API;
           seenProviders.add(pname);
         }
         nc.models.providers[pname].models.push({
@@ -284,17 +339,28 @@ export function useModel() {
   }
 
   onMounted(() => {
-    // 监听 WS 连接状态：握手完成后再触发首次加载，避免在 CONNECTING 阶段
-    // 触发请求导致 wsManager.request() reject('WebSocket 未连接')。
-    // 配合 admin-rpc 的 withConnection 包装，连接未就绪时调用会挂起等待
-    // 但视图层仍应在握手完成后再触发以避免长延迟。
-    if (wsConnected.value) {
+    // 🔧 修复: 一次性触发 + 防并发。
+    //    原来这里有两个问题:
+    //      (1) watch 没 stop，多次 wsConnected 跳变会重复触发 loadModels
+    //      (2) 旧的「watch 触发后再 await loadModels 才关 pageLoading」会让骨架屏
+    //          被 catalog/config 的 15s 超时拖住
+    //    现在：触发一次后 stop watch；pageLoading 由 loadModels 内部管（不再由这里管），
+    //          保证只触发一次。
+    let triggered = false
+    const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()
+    const fire = () => {
+      if (triggered) return
+      triggered = true
+      console.info(`[MODEL-DIAG] loadModels fire at +${((typeof performance!=='undefined'?performance.now():Date.now()) - t0).toFixed(0)}ms`)
       loadModels().finally(() => { pageLoading.value = false })
+    }
+    if (wsConnected.value) {
+      fire()
     } else {
-      watch(wsConnected, async (connected) => {
+      const stop = watch(wsConnected, (connected) => {
         if (!connected) return
-        await loadModels()
-        pageLoading.value = false
+        stop()  // 一次性：触发后立即解绑，避免后续握手抖动再次触发
+        fire()
       })
     }
   })

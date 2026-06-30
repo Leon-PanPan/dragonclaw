@@ -730,19 +730,24 @@ export function useAgent() {
   }
 
   onMounted(() => {
-    // 监听 WS 连接状态：握手完成后再触发首次加载，避免在 CONNECTING 阶段
-    // 触发请求导致 wsManager.request() reject('WebSocket 未连接')。
-    // 配合 admin-rpc 的 withConnection 包装，连接未就绪时调用会挂起等待
-    // 但视图层仍应在握手完成后再触发以避免长延迟。
-    if (wsConnected.value) {
+    // 🔧 修复: 一次性触发 + watch 立即 stop。
+    //    原来: watch(wsConnected, ...) 没有 stop,后续 WS 重连会重复加载
+    //    现在: 触发一次后 stop,避免抖动
+    let triggered = false
+    const fire = () => {
+      if (triggered) return
+      triggered = true
       Promise.all([loadAgents(), loadDiscoverSouls()]).finally(() => {
         pageLoading.value = false;
       });
+    }
+    if (wsConnected.value) {
+      fire()
     } else {
-      watch(wsConnected, async (connected) => {
-        if (!connected) return;
-        await Promise.all([loadAgents(), loadDiscoverSouls()]);
-        pageLoading.value = false;
+      const stop = watch(wsConnected, (connected) => {
+        if (!connected) return
+        stop()
+        fire()
       });
     }
   });
