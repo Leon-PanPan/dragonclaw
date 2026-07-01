@@ -55,6 +55,8 @@
 import net from 'net';
 import { spawn } from 'child_process';
 import process from 'process';
+import { fileURLToPath } from 'url';
+import { resolve } from 'path';
 
 const COL = {
   reset:  '\x1b[0m',
@@ -207,7 +209,9 @@ async function main() {
 }
 
 // Only run main() when this file is the program entry, not when imported.
-const isEntry = import.meta.url === `file://${process.argv[1]}`;
+// Use normalized file paths for cross-platform compatibility (Windows uses
+// backslashes in process.argv[1] while import.meta.url uses forward slashes).
+const isEntry = resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1]);
 if (isEntry) {
   main().catch((e) => {
     warn(e.stack || e.message);
