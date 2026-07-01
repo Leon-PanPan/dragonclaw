@@ -542,6 +542,15 @@ ipcMain.handle(CH.EXECUTE_INSTALL_STEP, async (event, { command, name, sudoPassw
       }
     }
 
+    // Windows 防御：给命令中嵌套的 powershell -Command 自动注入 -ExecutionPolicy Bypass
+    // 避免嵌套子进程因系统 Restricted 策略拦截 .ps1 脚本执行
+    if (isWindows) {
+      finalCommand = finalCommand.replace(
+        /(?<!\S)powershell(?:\.exe)?(?=\s+-Command\b)/gi,
+        'powershell -ExecutionPolicy Bypass'
+      );
+    }
+
     // 发送开始事件
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('install-step-output', {
