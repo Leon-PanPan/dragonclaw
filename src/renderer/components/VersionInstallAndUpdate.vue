@@ -613,16 +613,28 @@ const initOpenClaw = async (key) => {
   if (openclawVersion) params.set('openclaw_version', openclawVersion);
 
   const initUrl = `${window.__CLAWC_DOMAIN__ || 'http://api.dragonclaw.cc'}/base/api/addons/clawc/install/initScript?${params.toString()}`;
+  console.log(`[initOpenClaw] 请求 initScript: ${initUrl}`);
 
   pushLine(key, { message: '🔧 正在初始化 OpenClaw...', type: 'stdout', success: null });
 
   try {
     const initResp = await window.electronAPI?.fetchInstallScript?.(initUrl);
-    if (!initResp || initResp.status !== 200) return;
+    console.log(`[initOpenClaw] initScript 响应: status=${initResp?.status}, data=${!!initResp?.data}`);
+
+    if (!initResp || initResp.status !== 200) {
+      const errMsg = initResp?.message || `HTTP ${initResp?.status || 'unknown'}`;
+      pushLine(key, { message: `✗ 获取初始化脚本失败: ${errMsg}`, type: 'stderr', success: false });
+      console.warn(`[initOpenClaw] initScript 失败: ${errMsg}`);
+      return;
+    }
 
     const initScripts = initResp.data?.scripts || initResp.scripts || [];
+    console.log(`[initOpenClaw] 共 ${initScripts.length} 个初始化步骤`);
     for (const step of initScripts) {
+      console.log(`[initOpenClaw] 开始步骤 [${step.step}]: ${step.name}`);
+      pushLine(key, { message: `▶ [${step.step}/${initScripts.length}] ${step.name}`, type: 'stdout', success: null });
       const result = await window.electronAPI?.executeInstallStep?.(step.command, step.name, null, null, key);
+      console.log(`[initOpenClaw] 步骤 [${step.step}] 结果: success=${result?.success}, error=${result?.error || 'none'}`);
       const stepInfo = step.command
         ? `\n  命令: ${step.command.substring(0, 200)}${step.command.length > 200 ? '...' : ''}`
         : '';
@@ -635,7 +647,9 @@ const initOpenClaw = async (key) => {
       }
     }
     pushLine(key, { message: '✓ OpenClaw 初始化完成', type: 'stdout', success: true });
+    console.log('[initOpenClaw] 全部初始化步骤完成');
   } catch (e) {
+    pushLine(key, { message: `✗ 初始化异常: ${e.message}`, type: 'stderr', success: false });
     console.warn('[initOpenClaw] 初始化异常:', e.message);
   }
 };
