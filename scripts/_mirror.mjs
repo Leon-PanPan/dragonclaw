@@ -194,6 +194,12 @@ async function main() {
   const child = spawn(cliArgs[0], cliArgs.slice(1), {
     stdio: 'inherit',
     env: process.env,
+    // Windows: shell=true so cmd.exe resolves .cmd/.bat shims in PATH.
+    // pnpm creates electron-builder.cmd (not electron-builder.exe) in
+    // node_modules/.bin, which CreateProcess cannot find without the
+    // extension. macOS/Linux POSIX execve() handles extension-less
+    // shims natively, so shell is only needed on Windows.
+    shell: process.platform === 'win32',
   });
   child.on('error', (e) => {
     warn(`failed to spawn ${cliArgs[0]}: ${e.message}`);
