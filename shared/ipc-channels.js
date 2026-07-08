@@ -119,4 +119,7 @@ module.exports = {
   CLEANUP_PROGRESS: 'cleanup:progress',
   CLEANUP_DONE: 'cleanup:done',
   CLEANUP_ERROR: 'cleanup:error',
+  // WebSocket 代理（绕过 Chromium 私有网络限制）
+  START_WS_PROXY: 'start-ws-proxy',
+  STOP_WS_PROXY: 'stop-ws-proxy',
 };

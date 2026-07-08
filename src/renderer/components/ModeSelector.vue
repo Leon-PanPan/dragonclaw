@@ -229,20 +229,24 @@ async function handleTest() {
   testResult.value = null;
   const { ip, port, authMethod, token } = configForm.value;
   
-  // 根据认证方式构建 URL
-  let tokenPart = '';
-  if (authMethod === 'token' && token) {
-    tokenPart = `?token=${encodeURIComponent(token)}`;
+  // 通过主进程代理连接（绕过 Chromium PNA）
+  const origin = location.origin || `http://${location.hostname}`;
+  const proxy = await window.electronAPI?.startWsProxy?.(ip, port, authMethod === 'token' ? token : '', origin);
+  if (!proxy?.success) {
+    testResult.value = { success: false, message: `代理启动失败: ${proxy?.error || '未知'}` };
+    testing.value = false;
+    return;
   }
   
   try {
-    const ok = await testWs(`ws://${ip}:${port}${tokenPart}`);
+    const ok = await testWs(`ws://${proxy.host}:${proxy.proxyPort}`);
     testResult.value = ok
       ? { success: true, message: `连接成功！服务器 ${ip}:${port} 响应正常` }
       : { success: false, message: `无法连接到 ${ip}:${port}，请检查 IP、端口和认证信息` };
   } catch (e: any) {
     testResult.value = { success: false, message: `连接失败：${e.message}` };
   } finally {
+    window.electronAPI?.stopWsProxy?.();
     testing.value = false;
   }
 }

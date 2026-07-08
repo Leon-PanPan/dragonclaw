@@ -766,3 +766,67 @@ ipcMain.handle(CH.TEST_FEISHU_CONNECTION, async (event, feishuConfig) => {
     return { success: false, error: error.message };
   }
 });
+
+// ==================== WebSocket 代理 ====================
+// 绕过 Chromium Private Network Access 限制：主进程用 Node.js WebSocket 连接远程网关，
+// 渲染进程连接本地代理端口 127.0.0.1，主进程透明转发。
+let wsProxyServer = null;
+let wsProxyRemote = null;
+
+ipcMain.handle(CH.START_WS_PROXY, async (event, { host, port, token, origin }) => {
+  console.log(`[ws-proxy] 启动: ${host}:${port} origin=${origin}`);
+
+  if (wsProxyServer) {
+    try { wsProxyServer.close(); } catch {}
+    wsProxyServer = null;
+  }
+  if (wsProxyRemote) {
+    try { wsProxyRemote.terminate(); } catch {}
+    wsProxyRemote = null;
+  }
+
+  return new Promise((resolve) => {
+    const { WebSocketServer } = require('ws');
+    const net = require('net');
+
+    const tmp = net.createServer();
+    tmp.listen(0, '127.0.0.1', () => {
+      const proxyPort = tmp.address().port;
+      tmp.close(() => {
+        wsProxyServer = new WebSocketServer({ host: '127.0.0.1', port: proxyPort }, () => {
+          console.log(`[ws-proxy] 代理已启动: 127.0.0.1:${proxyPort}`);
+        });
+
+        wsProxyServer.on('connection', (clientWs) => {
+          console.log('[ws-proxy] 渲染进程已连接');
+
+          const { WebSocket } = require('ws');
+          wsProxyRemote = new WebSocket(`ws://${host}:${port}?token=${encodeURIComponent(token)}`, {
+            headers: origin ? { Origin: origin } : {},
+          });
+
+          wsProxyRemote.on('open', () => { console.log('[ws-proxy] 远程网关已连接'); });
+          wsProxyRemote.on('message', (data) => { if (clientWs.readyState === 1) clientWs.send(data.toString()); });
+          wsProxyRemote.on('close', (code, reason) => { if (clientWs.readyState === 1) clientWs.close(code, reason?.toString()); });
+          wsProxyRemote.on('error', (err) => { console.error(`[ws-proxy] 远程错误: ${err.message}`); if (clientWs.readyState === 1) clientWs.close(1011, err.message); });
+
+          clientWs.on('message', (data) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.send(data.toString()); });
+          clientWs.on('close', (code, reason) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.close(code, reason?.toString()); });
+          clientWs.on('error', (err) => { console.error(`[ws-proxy] 客户端错误: ${err.message}`); });
+        });
+
+        wsProxyServer.on('error', (err) => { console.error(`[ws-proxy] 服务错误: ${err.message}`); });
+
+        resolve({ success: true, proxyPort, host: '127.0.0.1' });
+      });
+    });
+    tmp.on('error', (err) => { resolve({ success: false, error: err.message }); });
+  });
+});
+
+ipcMain.handle(CH.STOP_WS_PROXY, async () => {
+  console.log('[ws-proxy] 停止');
+  if (wsProxyRemote) { try { wsProxyRemote.terminate(); } catch {} wsProxyRemote = null; }
+  if (wsProxyServer) { try { wsProxyServer.close(); } catch {} wsProxyServer = null; }
+  return { success: true };
+});

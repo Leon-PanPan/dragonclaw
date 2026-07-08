@@ -187,6 +187,7 @@ class WebSocketManager {
   private _gatewayPort: number = 18789; // 默认端口，可通过配置更新
   private _remoteMode: boolean = false; // 是否为远程模式
   private _remoteUrl: string | null = null; // 远程模式 WebSocket URL（完整 URL）
+  private _proxyUrl: string | null = null; // 代理 URL（绕过 Chromium PNA）
   private readyWaiters: Array<{
     resolve: () => void;
     reject: (err: Error) => void;
@@ -297,14 +298,21 @@ class WebSocketManager {
       
       adminClient.configure({ host: remoteConfig.ip, port: remoteConfig.port, token: remoteConfig.token });
       console.log(`[wsManager] 切换到远程模式: ${remoteConfig.ip}:${remoteConfig.port}, 认证方式: ${this._remoteAuthMethod}`);
+      console.log(`[wsManager]   远程 URL: ${this._remoteUrl}`);
+      console.log(`[wsManager]   navigator.onLine=${navigator.onLine}, origin=${location.protocol}//${location.hostname}`);
     } else {
       this._remoteMode = false;
       this._remoteUrl = null;
+      this._proxyUrl = null;
       this._remotePassword = '';
       this._remoteAuthMethod = 'token';
       adminClient.configure({ host: '127.0.0.1', port: this._gatewayPort });
       console.log(`[wsManager] 切换到本机模式`);
     }
+  }
+
+  setProxyUrl(url: string | null) {
+    this._proxyUrl = url;
   }
 
   // 获取当前连接是否为远程模式
@@ -388,8 +396,11 @@ class WebSocketManager {
     this.setState(ConnectionState.CONNECTING);
 
     // 获取 WebSocket URL
-    if (this._remoteMode && this._remoteUrl) {
-      // 远程模式：使用完整的远程 URL（已包含 token 参数）
+    if (this._remoteMode && this._proxyUrl) {
+      // 远程模式：通过主进程代理连接（绕过 Chromium PNA）
+      this.url = this._proxyUrl;
+    } else if (this._remoteMode && this._remoteUrl) {
+      // 远程模式：直连（可能受浏览器策略限制）
       this.url = this._remoteUrl;
     } else {
       // 本机模式：连接本地 Gateway
@@ -414,7 +425,9 @@ class WebSocketManager {
       this.connectReject = reject;
       const thisId = thisConnectId; // 保存当前连接的 ID
       try {
+        console.log(`[wsManager] 创建 WebSocket: ${this.url}, _remoteMode=${this._remoteMode}`);
         this.ws = new WebSocket(this.url);
+        console.log(`[wsManager] WebSocket 已创建, readyState=${this.ws.readyState} (0=CONNECTING 1=OPEN 2=CLOSING 3=CLOSED)`);
 
         const connectTimeout = setTimeout(() => {
           if (this.connectId === thisId) {
@@ -434,7 +447,7 @@ class WebSocketManager {
 
         this.ws.addEventListener('close', (event) => {
           clearTimeout(connectTimeout);
-          console.log(`连接 #${thisId} WebSocket 关闭:`, event.code, event.reason);
+          console.log(`[wsManager] 连接 #${thisId} WebSocket 关闭: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}, target.readyState=${(event.target as WebSocket).readyState}`);
           this.logWsMessage('disconnect', { action: 'close', code: event.code, reason: event.reason });
           this.stopHeartbeat();
           this.setState(ConnectionState.DISCONNECTED);
@@ -480,21 +493,22 @@ class WebSocketManager {
           }
         });
 
-        this.ws.addEventListener('error', (error) => {
+        this.ws.addEventListener('error', (errorEvent) => {
           clearTimeout(connectTimeout);
-          console.error('WebSocket 错误:', error);
-          this.logWsMessage('error', { action: 'error', error: String(error) });
+          console.error(`[wsManager] WebSocket 错误 (连接 #${thisId}): type=${errorEvent.type}, target.url=${(errorEvent.target as WebSocket)?.url}, target.readyState=${(errorEvent.target as WebSocket)?.readyState}`);
+          console.error('[wsManager] 错误详情:', errorEvent);
+          this.logWsMessage('error', { action: 'error', error: String(errorEvent.type), url: this.url });
           this.setState(ConnectionState.ERROR);
           
           // 清除待处理的 connect Promise
           if (this.connectReject) {
-            this.connectReject(error);
+            this.connectReject(new Error(`WebSocket error: ${errorEvent.type}`));
             this.connectResolve = null;
             this.connectReject = null;
           }
           
-          this.errorHandler?.(error);
-          reject(error);
+          this.errorHandler?.(errorEvent);
+          reject(new Error(`WebSocket error: ${errorEvent.type}`));
         });
 
       } catch (error) {

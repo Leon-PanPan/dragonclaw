@@ -152,6 +152,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadRemoteConfig: () => ipcRenderer.invoke('load-remote-config'),
   clearRemoteConfig: () => ipcRenderer.invoke('clear-remote-config'),
 
+  // WebSocket 代理
+  startWsProxy: (host, port, token, origin) => ipcRenderer.invoke('start-ws-proxy', { host, port, token, origin }),
+  stopWsProxy: () => ipcRenderer.invoke('stop-ws-proxy'),
+
   // 通用 API 请求（解决跨域问题）
   fetchApi: ({ url, method = 'GET', headers = {}, body = null }) => ipcRenderer.invoke('fetch-api', { url, method, headers, body }),
 

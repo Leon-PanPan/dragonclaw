@@ -564,25 +564,35 @@ const initApp = async () => {
   }
 };
 
-// 连接远程 WebSocket
-// 远程 Gateway 不走 hello-ok 握手，用 state===CONNECTED 轮询确认连接成功
+// 连接远程 WebSocket（通过主进程代理绕过 Chromium PNA 限制）
 const connectRemoteWs = async () => {
   if (!modeStore.isRemote || !modeStore.remoteConfig.ip) return;
   const { ip, port, authMethod, token, password } = modeStore.remoteConfig;
-  console.log(`[App] 连接远程 Gateway: ${ip}:${port}, 认证方式: ${authMethod}`);
+  console.log(`[App] 连接远程 Gateway: ${ip}:${port}, 认证: ${authMethod}`);
+
   remoteWsConnecting.value = true;
   remoteWsConnected.value = false;
+
+  // 启动主进程代理
+  const origin = location.origin || `http://${location.hostname}`;
+  const proxy = await window.electronAPI?.startWsProxy?.(ip, port, authMethod === 'token' ? token : '', origin);
+  if (!proxy?.success) {
+    console.error('[App] 代理启动失败:', proxy?.error);
+    remoteWsConnecting.value = false;
+    return;
+  }
+  wsManager.setProxyUrl(`ws://${proxy.host}:${proxy.proxyPort}`);
+  console.log(`[App] 代理已启动: ${proxy.host}:${proxy.proxyPort}`);
+
   wsManager.setMode('remote', { ip, port, token, password, authMethod });
   wsManager.disconnect(1000);
-  await new Promise(r => setTimeout(r, 300)); // 等待旧连接关闭
+  await new Promise(r => setTimeout(r, 300));
 
-  // 用 state 轮询确认连接成功（避免 subscribe 时序问题）
   wsManager.connect({ agentId: 'main', token: authMethod === 'token' ? token : '', sessionKey: null });
   let waited = 0;
   const checkInterval = setInterval(() => {
     waited += 100;
     const state = wsManager.state.value;
-    console.log(`[App] 连接状态检查: state=${state}, waited=${waited}ms`);
     if (state === 'connected') {
       clearInterval(checkInterval);
       remoteWsConnecting.value = false;
@@ -590,11 +600,15 @@ const connectRemoteWs = async () => {
       remoteReady.value = true;
       openClawRunning.value = true;
       window._remoteWsReady = true;
-      console.log('[App] 远程 WebSocket 连接成功（state=connected）');
+      console.log('[App] ✅ 远程连接成功');
     } else if (waited >= 20000) {
       clearInterval(checkInterval);
       remoteWsConnecting.value = false;
-      console.log('[App] 远程连接超时');
+      console.log(`[App] ❌ 远程连接超时, state=${state}`);
+    } else if (state === 'error' || state === 'disconnected') {
+      clearInterval(checkInterval);
+      remoteWsConnecting.value = false;
+      console.log(`[App] ❌ 远程连接失败, state=${state}`);
     }
   }, 100);
 };
@@ -607,6 +621,8 @@ const reinitLocalConnection = async () => {
   remoteReady.value = false;
   window._remoteWsReady = false;
   wsManager.setMode('local');
+  wsManager.setProxyUrl(null);
+  window.electronAPI?.stopWsProxy?.();
   wsManager.disconnect(1000);
   openclawConfig.value = await window.electronAPI?.readConfig?.() || {};
   const canConnect = await testWebSocketConnection();
@@ -617,7 +633,13 @@ const reinitLocalConnection = async () => {
 watch(() => modeStore.mode, async (newMode, oldMode) => {
   if (newMode === 'remote' && oldMode === 'local') {
     console.log('[App] 模式切换：本机 → 远程');
-    wsManager.setMode('remote');
+    wsManager.setMode('remote', {
+      ip: modeStore.remoteConfig.ip,
+      port: modeStore.remoteConfig.port,
+      token: modeStore.remoteConfig.token,
+      password: modeStore.remoteConfig.password,
+      authMethod: modeStore.remoteConfig.authMethod,
+    });
     wsManager.disconnect(1000);
     openClawRunning.value = false;
     remoteWsConnecting.value = true;
@@ -1075,6 +1097,8 @@ function confirmSwitchToLocal() {
   localConfirmModalVisible.value = false;
   modeStore.setLocalMode();
   wsManager.setMode('local');
+  wsManager.setProxyUrl(null);
+  window.electronAPI?.stopWsProxy?.();
   wsManager.disconnect(1000);
   setTimeout(async () => {
     try {
@@ -1094,76 +1118,37 @@ async function testRemoteConnection() {
   remoteConfigTestResult.value = null;
   const { ip, port, authMethod, token } = remoteConfigForm.value;
 
-  // 根据认证方式构建 URL
-  let tokenPart = '';
-  if (authMethod === 'token' && token) {
-    tokenPart = `?token=${encodeURIComponent(token)}`;
-  }
-  const testUrl = `ws://${ip}:${port}${tokenPart}`;
+  console.log('[testRemoteConnection] ===== 测试远程连接 =====');
+  console.log(`[testRemoteConnection] 目标: ${ip}:${port}, 认证: ${authMethod}`);
 
-  console.log('[testRemoteConnection] ===== 开始测试远程连接 =====');
-  console.log('[testRemoteConnection] 配置:', { ip, port, authMethod, hasToken: !!token, tokenLen: token?.length });
-  console.log('[testRemoteConnection] 目标 URL:', testUrl);
-  console.log('[testRemoteConnection] navigator.onLine =', navigator.onLine);
-  console.log('[testRemoteConnection] location:', { protocol: location.protocol, host: location.host, href: location.href });
+  // 通过主进程代理连接
+  const origin = location.origin || `http://${location.hostname}`;
+  const proxy = await window.electronAPI?.startWsProxy?.(ip, port, authMethod === 'token' ? token : '', origin);
+  if (!proxy?.success) {
+    remoteConfigTestResult.value = { success: false, message: `代理启动失败: ${proxy?.error || '未知'}` };
+    remoteConfigTesting.value = false;
+    return;
+  }
+  const proxyUrl = `ws://${proxy.host}:${proxy.proxyPort}`;
+  console.log(`[testRemoteConnection] 代理: ${proxyUrl}`);
 
   try {
     const connected = await new Promise((resolve) => {
-      console.log('[testRemoteConnection] 准备 new WebSocket()...');
-      let ws;
-      try {
-        ws = new WebSocket(testUrl);
-      } catch (e) {
-        console.error('[testRemoteConnection] new WebSocket() 抛同步异常:', e);
-        resolve(false);
-        return;
-      }
-      console.log('[testRemoteConnection] WebSocket 已创建，readyState =', ws.readyState);
+      const ws = new WebSocket(proxyUrl);
       let resolved = false;
-      const timer = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          console.warn('[testRemoteConnection] 6 秒超时，关闭连接');
-          try { ws.close(); } catch {}
-          resolve(false);
-        }
-      }, 6000);
-      ws.onopen = (event) => {
-        console.log('[testRemoteConnection] ✅ onopen 触发，readyState =', ws.readyState, event);
-      };
+      const timer = setTimeout(() => { if (!resolved) { resolved = true; ws.close(); resolve(false); } }, 6000);
       ws.onmessage = (event) => {
-        console.log('[testRemoteConnection] onmessage:', event.data);
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'event' && data.event === 'connect.challenge') {
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timer);
-              ws.close();
-              resolve(true);
-            }
+            if (!resolved) { resolved = true; clearTimeout(timer); ws.close(); resolve(true); }
           }
-        } catch (e) {
-          console.warn('[testRemoteConnection] 解析 message 失败:', e);
-        }
+        } catch {}
       };
-      ws.onerror = (event) => {
-        console.error('[testRemoteConnection] ❌ onerror 触发，event =', event, 'readyState =', ws.readyState);
-        if (!resolved) {
-          resolved = true;
-          clearTimeout(timer);
-          resolve(false);
-        }
-      };
-      ws.onclose = (event) => {
-        console.log('[testRemoteConnection] onclose 触发，code =', event.code, 'reason =', event.reason, 'wasClean =', event.wasClean, 'readyState =', ws.readyState);
-        if (!resolved) {
-          resolved = true;
-          clearTimeout(timer);
-          resolve(false);
-        }
-      };
+      ws.onerror = () => { if (!resolved) { resolved = true; clearTimeout(timer); resolve(false); } };
+      ws.onclose = () => { if (!resolved) { resolved = true; clearTimeout(timer); resolve(false); } };
     });
+    window.electronAPI?.stopWsProxy?.();
     if (connected) remoteConfigTestResult.value = { success: true, message: `连接成功！服务器 ${ip}:${port} 响应正常` };
     else remoteConfigTestResult.value = { success: false, message: `无法连接到 ${ip}:${port}，请检查 IP、端口和认证信息` };
   } catch (e) { remoteConfigTestResult.value = { success: false, message: `连接失败：${e.message || '未知错误'}` }; }

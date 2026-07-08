@@ -34,7 +34,8 @@
     "socket.io-client": "^4.6.0",
     "sql.js": "^1.14.1",
     "vue": "^3.3.0",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@streamparser/json": "^0.0.22",
@@ -74,7 +75,13 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64", "arm64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "src/assets/icons/icon.ico",
       "artifactName": "${productName}-${version}-${arch}.${ext}"
@@ -102,8 +109,20 @@
     },
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64", "arm64"] },
-        { "target": "deb", "arch": ["x64", "arm64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "src/assets/icons",
       "category": "Development",
