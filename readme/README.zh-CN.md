@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/assets/logo-github.png" alt="DragonClaw" width="120" />
+<img src="../doc/assets/logo-github.png" alt="DragonClaw" width="120" />
 
 # DragonClaw
 
@@ -14,7 +14,7 @@
 [![Build](https://img.shields.io/badge/build-Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
+[English](../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
 
 </div>
 
@@ -91,7 +91,7 @@
 - **打开 / 切换** — 当前工作区始终显示在输入栏；点击即可在系统文件管理器中打开，或随时重新指派新的工作目录。
 - **未设置提示** — 尚未绑定工作区时，输入栏会高亮提示，避免误操作。
 
-![会话视图](doc/assets/Session.png)
+![会话视图](../doc/assets/Session.png)
 
 #### 🌳 子任务（Sub-tasks）
 
@@ -116,7 +116,7 @@
 - **Ollama 等本地模型** — 预置 `http://127.0.0.1:11434/v1` 端点，本地大模型开箱即用。
 - **快速切换** — 在会话顶部即可按会话维度切换主模型，无需重启 Gateway。
 
-![模型配置](doc/assets/Models.png)
+![模型配置](../doc/assets/Models.png)
 
 ---
 
@@ -133,7 +133,7 @@ DragonClaw 内置了**智能体商店（Agents Store）**，让你直接在应�
 - **已安装视图** — 独立 Tab 展示「我创建的」智能体，可编辑、删除、查看对应工作区。
 - **在线更新** — 已安装的智能体有新版本时，可一键升级到最新。
 
-![智能体商店](doc/assets/Agents-Store.png)
+![智能体商店](../doc/assets/Agents-Store.png)
 
 ---
 
@@ -173,7 +173,7 @@ DragonClaw 内置**一站式组件更新机制**，并在应用**启动时自动
 - **状态可视化** — 空闲、执行中、异常、完成等状态以不同标识呈现，便于快速发现卡点。
 - **一键刷新** — 顶部「刷新」按钮可主动拉取最新状态，无需等待推送。
 
-![看板](doc/assets/Board.png)
+![看板](../doc/assets/Board.png)
 
 ---
 
@@ -187,7 +187,7 @@ OpenClaw 的技能生态非常庞大，DragonClaw 提供了**完全图形化的�
 - **作者与更新日期** — 列表展示作者、装机量、最近更新时间，方便判断维护活跃度。
 - **本地缓存同步** — 安装完成的技能会在本地缓存，下次启动无需重新下载。
 
-![技能管理](doc/assets/Skills.png)
+![技能管理](../doc/assets/Skills.png)
 
 ---
 
@@ -200,7 +200,7 @@ OpenClaw 的技能生态非常庞大，DragonClaw 提供了**完全图形化的�
 - **软件管理** — 统一查看与管理已安装应用，按大小、更新时间、占用情况排序，可一键卸载不再需要的软件。
 - **状态刷新** — 顶部「刷新状态」按钮可重新扫描本机，获取最新软件与硬件状态。
 
-![电脑助手](doc/assets/Computer.png)
+![电脑助手](../doc/assets/Computer.png)
 
 ---
 
@@ -216,7 +216,7 @@ DragonClaw 把所有可调参数都收拢到一个**统一设置面板**中，�
 - **安全设置** — 远程连接认证、Token 管理、敏感操作二次确认等。
 - **保存与重载** — 右下角「保存设置」一键应用，右上角「重新加载」可丢弃改动并重读。
 
-![统一设置](doc/assets/Settings.png)
+![统一设置](../doc/assets/Settings.png)
 
 ---
 

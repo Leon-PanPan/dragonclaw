@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/assets/logo-github.png" alt="DragonClaw" width="120" />
+<img src="../doc/assets/logo-github.png" alt="DragonClaw" width="120" />
 
 # DragonClaw
 
@@ -14,7 +14,7 @@
 [![Build](https://img.shields.io/badge/build-Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
+[English](../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
 
 </div>
 
@@ -91,7 +91,7 @@ Ein Workspace wird an die **aktuelle Sitzung** gebunden, nicht global an den Age
 - **Öffnen / neu binden** — der aktuelle Workspace ist stets im Eingabebereich sichtbar; Klick öffnet ihn im System-Dateimanager, jederzeit neu zuweisbar.
 - **Leere-Zustand-Warnung** — ist kein Workspace gesetzt, hebt der Eingabebereich dies hervor, um Fehlbedienung zu vermeiden.
 
-![Konversationsansicht](doc/assets/Session.png)
+![Konversationsansicht](../doc/assets/Session.png)
 
 #### 🌳 Teilaufgaben (Sub-tasks)
 
@@ -116,7 +116,7 @@ Modellkonfiguration ist ein weiterer Bereich, in dem DragonClaw glänzt. Wo Vani
 - **Lokale Modelle als Erstbürger** — Ollama ist mit `http://127.0.0.1:11434/v1` vorkonfiguriert; lokale LLMs laufen sofort.
 - **Sitzungsweises Umschalten** — das Hauptmodell einer Konversation direkt in deren oberer Leiste wechseln, ohne Gateway-Neustart.
 
-![Modellkonfiguration](doc/assets/Models.png)
+![Modellkonfiguration](../doc/assets/Models.png)
 
 ---
 
@@ -133,7 +133,7 @@ DragonClaw liefert einen eingebauten **Agents Store**, mit dem du Agenten — zu
 - **„Meine Agenten"-Ansicht** — ein eigener Tab listet alles, was du erstellt hast, zum Bearbeiten, Löschen oder Inspizieren.
 - **Online-Updates** — veröffentlicht ein installierter Agent eine neue Version, aktualisierst du mit einem Klick.
 
-![Agents Store](doc/assets/Agents-Store.png)
+![Agents Store](../doc/assets/Agents-Store.png)
 
 ---
 
@@ -173,7 +173,7 @@ Wenn eine Aufgabe auf mehrere parallel arbeitende Agenten aufgeteilt werden muss
 - **Status-Visualisierung** — Leerlauf, läuft, Fehler und fertig werden mit unterschiedlichen Markierungen dargestellt, sodass Engpässe sofort auffallen.
 - **Ein-Klick-Aktualisierung** — die Schaltfläche **Aktualisieren** in der Kopfzeile zieht den aktuellen Status jederzeit aktiv nach, ohne auf Push-Events zu warten.
 
-![Dashboard](doc/assets/Board.png)
+![Dashboard](../doc/assets/Board.png)
 
 ---
 
@@ -187,7 +187,7 @@ Das Skill-Ökosystem von OpenClaw ist riesig — DragonClaw verpackt es in ein *
 - **Autor- und Update-Metadaten** — die Liste zeigt Autor, Installationszahl und letztes Update, sodass du die Wartungsaktivität auf einen Blick einschätzen kannst.
 - **Lokale Cache-Synchronisierung** — installierte Skills werden lokal gecached; beim nächsten Start ist kein erneutes Herunterladen nötig.
 
-![Skill-Verwaltung](doc/assets/Skills.png)
+![Skill-Verwaltung](../doc/assets/Skills.png)
 
 ---
 
@@ -200,7 +200,7 @@ Das Skill-Ökosystem von OpenClaw ist riesig — DragonClaw verpackt es in ein *
 - **Software-Verwaltung** — eine einheitliche Ansicht aller installierten Apps, sortierbar nach Größe, letztem Update oder Belegung; nicht mehr benötigte Apps werden mit einem Klick deinstalliert.
 - **Status aktualisieren** — die Schaltfläche **Status aktualisieren** in der Kopfzeile scannt den Rechner erneut und holt den aktuellen Software- und Hardware-Stand.
 
-![Computer-Assistent](doc/assets/Computer.png)
+![Computer-Assistent](../doc/assets/Computer.png)
 
 ---
 
@@ -216,7 +216,7 @@ DragonClaw bündelt alle einstellbaren Parameter in einer einzigen **zentralen E
 - **Sicherheit** — Remote-Authentifizierung, Token-Verwaltung, zweite Bestätigung für sensible Aktionen.
 - **Speichern und neu laden** — die Schaltfläche **Speichern** unten rechts übernimmt Änderungen; **Neu laden** oben rechts verwirft die Bearbeitungen und liest die Werte erneut ein.
 
-![Einheitliche Einstellungen](doc/assets/Settings.png)
+![Einheitliche Einstellungen](../doc/assets/Settings.png)
 
 ---
 

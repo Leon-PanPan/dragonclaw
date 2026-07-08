@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/assets/logo-github.png" alt="DragonClaw" width="120" />
+<img src="../doc/assets/logo-github.png" alt="DragonClaw" width="120" />
 
 # DragonClaw
 
@@ -14,7 +14,7 @@
 [![Build](https://img.shields.io/badge/build-Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
+[English](../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
 
 </div>
 
@@ -91,7 +91,7 @@ DragonClaw의 가장 차별화된 기능과 그 활용 시나리오를 좀 더 �
 - **열기/재바인딩** — 현재 워크스페이스는 항상 입력 바에 표시되며, 클릭하면 시스템 파일 관리자에서 열거나, 언제든 새 디렉터리로 바꿀 수 있습니다.
 - **미설정 경고** — 워크스페이스가 설정되지 않은 경우 입력 바가 강조 표시되어 잘못된 작업을 방지합니다.
 
-![대화 화면](doc/assets/Session.png)
+![대화 화면](../doc/assets/Session.png)
 
 #### 🌳 서브태스크 (Sub-tasks)
 
@@ -116,7 +116,7 @@ DragonClaw의 가장 차별화된 기능과 그 활용 시나리오를 좀 더 �
 - **로컬 모델도 1등 시민** — Ollama가 `http://127.0.0.1:11434/v1` 엔드포인트로 사전 구성되어 로컬 LLM이 바로 동작.
 - **세션 단위 즉시 전환** — 상단 바에서 대화별 메인 모델을 변경할 수 있으며, Gateway 재시작이 필요 없습니다.
 
-![모델 설정](doc/assets/Models.png)
+![모델 설정](../doc/assets/Models.png)
 
 ---
 
@@ -133,7 +133,7 @@ DragonClaw는 내장된 **Agents Store**를 제공하여, 애플리케이션에�
 - **"내가 만든 에이전트" 보기** — 전용 탭에서 자신이 만든 모든 에이전트를 한눈에 보고, 편집·삭제·조회.
 - **온라인 업데이트** — 설치된 에이전트에 새 버전이 나오면 한 번의 클릭으로 최신 버전으로.
 
-![에이전트 스토어](doc/assets/Agents-Store.png)
+![에이전트 스토어](../doc/assets/Agents-Store.png)
 
 ---
 
@@ -173,7 +173,7 @@ OpenClaw Gateway가 LAN 안의 다른 머신에 있든, 원격 서버·사내 �
 - **상태 시각화** — 대기/실행 중/오류/완료 등을 서로 다른 마커로 보여주어 병목 지점을 빠르게 찾을 수 있습니다.
 - **원클릭 새로 고침** — 헤더의 "새로 고침" 버튼으로 푸시를 기다리지 않고도 능동적으로 최신 상태를 가져옵니다.
 
-![대시보드](doc/assets/Board.png)
+![대시보드](../doc/assets/Board.png)
 
 ---
 
@@ -187,7 +187,7 @@ OpenClaw의 스킬 생태계는 방대합니다. DragonClaw는 이를 **완전 �
 - **작성자와 최근 업데이트** — 목록에 작성자, 설치 수, 최근 업데이트가 함께 표시되어 유지보수 활성도를 한눈에 판단할 수 있습니다.
 - **로컬 캐시 동기화** — 설치가 끝난 스킬은 로컬에 캐시되어 다음 실행 시 다시 내려받지 않습니다.
 
-![스킬 관리](doc/assets/Skills.png)
+![스킬 관리](../doc/assets/Skills.png)
 
 ---
 
@@ -200,7 +200,7 @@ OpenClaw Gateway와의 협업 외에도, DragonClaw에는 로컬 머신에 AI �
 - **소프트웨어 관리** — 설치된 앱을 한 화면에서 확인하고, 크기·최근 업데이트·점유 현황별로 정렬할 수 있으며, 더 이상 필요 없는 앱은 원클릭으로 제거할 수 있습니다.
 - **상태 새로 고침** — 헤더의 "상태 새로 고침" 버튼으로 머신을 다시 스캔해 최신 소프트웨어/하드웨어 상태를 가져옵니다.
 
-![컴퓨터 어시스턴트](doc/assets/Computer.png)
+![컴퓨터 어시스턴트](../doc/assets/Computer.png)
 
 ---
 
@@ -216,7 +216,7 @@ DragonClaw는 조정 가능한 모든 항목을 하나의 **통합 설정 패널
 - **보안** — 원격 인증, 토큰 관리, 민감 작업의 2차 확인 등.
 - **저장과 다시 불러오기** — 오른쪽 아래의 "저장"으로 변경을 적용하고, 오른쪽 위의 "다시 불러오기"로 변경을 버리고 값을 다시 읽어옵니다.
 
-![통합 설정](doc/assets/Settings.png)
+![통합 설정](../doc/assets/Settings.png)
 
 ---
 

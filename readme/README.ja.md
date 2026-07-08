@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/assets/logo-github.png" alt="DragonClaw" width="120" />
+<img src="../doc/assets/logo-github.png" alt="DragonClaw" width="120" />
 
 # DragonClaw
 
@@ -14,7 +14,7 @@
 [![Build](https://img.shields.io/badge/build-Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
+[English](../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
 
 </div>
 
@@ -91,7 +91,7 @@ Gateway の「GUI の殻」に留まらず、DragonClaw は数多くの**革新�
 - **開く／再バインド** — 現在のワークスペースは常に入力バーに表示されます。クリックでシステムファイルマネージャで開くことも、随时新しいディレクトリに付け替えることもできます。
 - **未設定ガード** — ワークスペースが未設定の場合、入力バーがハイライトされて誤操作を防ぎます。
 
-![会話ビュー](doc/assets/Session.png)
+![会話ビュー](../doc/assets/Session.png)
 
 #### 🌳 サブタスク（Sub-tasks）
 
@@ -116,7 +116,7 @@ Gateway の「GUI の殻」に留まらず、DragonClaw は数多くの**革新�
 - **Ollama などのローカルモデル** — `http://127.0.0.1:11434/v1` エンドポイントをプリセット。ローカル LLM がそのまま動作します。
 - **セッション単位の切替** — トップバーから会話ごとにメインモデルを変更でき、Gateway の再起動は不要です。
 
-![モデル設定](doc/assets/Models.png)
+![モデル設定](../doc/assets/Models.png)
 
 ---
 
@@ -133,7 +133,7 @@ DragonClaw には** Agents Store **が標準搭載されており、アプリケ
 - **「自分のエージェント」ビュー** — 専用のタブで自分が作成したエージェントを一覧し、編集・削除・参照が可能。
 - **オンラインアップデート** — インストール済みエージェントの新バージョンが公開されたら、ワンクリックで最新版へ。
 
-![Agents Store](doc/assets/Agents-Store.png)
+![Agents Store](../doc/assets/Agents-Store.png)
 
 ---
 
@@ -173,7 +173,7 @@ OpenClaw Gateway が LAN 内の別のマシンにあっても、リモートサ�
 - **状態の可視化** — アイドル／実行中／エラー／完了などが異なるマーカーで示され、ボトルネックをすぐに発見できます。
 - **ワンクリック更新** — ヘッダーの「リフレッシュ」ボタンで能動的に最新状態を取得でき、プッシュを待つ必要はありません。
 
-![ダッシュボード](doc/assets/Board.png)
+![ダッシュボード](../doc/assets/Board.png)
 
 ---
 
@@ -187,7 +187,7 @@ OpenClaw のスキルエコシステムは非常に大きく、DragonClaw はそ
 - **作者と最終更新日** — リストには作者、インストール数、最終更新日が並び、メンテナンスの活発さをひと目で判断できます。
 - **ローカルキャッシュ同期** — インストール済みスキルはローカルにキャッシュされ、次回起動時に再ダウンロードする必要はありません。
 
-![スキル管理](doc/assets/Skills.png)
+![スキル管理](../doc/assets/Skills.png)
 
 ---
 
@@ -200,7 +200,7 @@ OpenClaw Gateway との協調に加え、DragonClaw にはローカルマシン�
 - **ソフトウェア管理** — インストール済みアプリを一覧で確認でき、サイズ・最終更新・占有状況での並べ替えや、不要アプリのワンクリックアンインストールが可能です。
 - **ステータス更新** — ヘッダーの「ステータス更新」ボタンでマシンを再スキャンし、最新のソフトウェア／ハードウェア状態を取得します。
 
-![コンピュータアシスタント](doc/assets/Computer.png)
+![コンピュータアシスタント](../doc/assets/Computer.png)
 
 ---
 
@@ -216,7 +216,7 @@ DragonClaw はすべての調整項目を一つの**統合設定パネル**に�
 - **セキュリティ** — リモート認証、Token 管理、機微操作の二次確認など。
 - **保存と再読込** — 右下の「保存」で変更を適用、右上の「再読込」で変更を破棄して値を読み込み直します。
 
-![統合設定](doc/assets/Settings.png)
+![統合設定](../doc/assets/Settings.png)
 
 ---
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/assets/logo-github.png" alt="DragonClaw" width="120" />
+<img src="../doc/assets/logo-github.png" alt="DragonClaw" width="120" />
 
 # DragonClaw
 
@@ -14,7 +14,7 @@
 [![Build](https://img.shields.io/badge/build-Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
+[English](../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [한국어](README.ko.md) · [العربية](README.ar.md) · [Deutsch](README.de.md)
 
 </div>
 
@@ -91,7 +91,7 @@
 - **開啟 / 切換** — 目前工作區始終顯示在輸入欄；點選即可在系統檔案管理員中開啟，或隨時重新指派新的工作目錄。
 - **未設定提示** — 尚未繫結工作區時，輸入欄會醒目提示，避免誤操作。
 
-![對話檢視](doc/assets/Session.png)
+![對話檢視](../doc/assets/Session.png)
 
 #### 🌳 子任務（Sub-tasks）
 
@@ -116,7 +116,7 @@
 - **Ollama 等本地模型** — 預設 `http://127.0.0.1:11434/v1` 端點，本地大模型開箱即用。
 - **快速切換** — 在工作階段頂部即可按工作階段維度切換主模型，無需重啟 Gateway。
 
-![模型設定](doc/assets/Models.png)
+![模型設定](../doc/assets/Models.png)
 
 ---
 
@@ -133,7 +133,7 @@ DragonClaw 內建了**智能體商店（Agents Store）**，讓你直接在應�
 - **已安裝檢視** — 獨立分頁展示「我建立的」智能體，可編輯、刪除、檢視對應工作區。
 - **線上更新** — 已安裝的智能體有新版本時，可一鍵升級到最新。
 
-![智能體商店](doc/assets/Agents-Store.png)
+![智能體商店](../doc/assets/Agents-Store.png)
 
 ---
 
@@ -173,7 +173,7 @@ DragonClaw 內建**一站式元件更新機制**，並在應用**啟動時自動
 - **狀態視覺化** — 閒置、執行中、異常、完成等狀態以不同標識呈現，方便快速發現卡點。
 - **一鍵刷新** — 頂部「刷新」按鈕可主動擷取最新狀態，無需等待推送。
 
-![儀表板](doc/assets/Board.png)
+![儀表板](../doc/assets/Board.png)
 
 ---
 
@@ -187,7 +187,7 @@ OpenClaw 的技能生態非常龐大，DragonClaw 提供了**完全圖形化的�
 - **作者與更新日期** — 列表展示作者、裝機量、最近更新時間，方便判斷維護活躍度。
 - **本機快取同步** — 安裝完成的技能會在本機快取，下次啟動無需重新下載。
 
-![技能管理](doc/assets/Skills.png)
+![技能管理](../doc/assets/Skills.png)
 
 ---
 
@@ -200,7 +200,7 @@ OpenClaw 的技能生態非常龐大，DragonClaw 提供了**完全圖形化的�
 - **軟體管理** — 統一檢視與管理已安裝應用，按大小、更新時間、占用情況排序，可一鍵解除安裝不再需要的軟體。
 - **狀態刷新** — 頂部「刷新狀態」按鈕可重新掃描本機，獲取最新軟硬體狀態。
 
-![電腦助手](doc/assets/Computer.png)
+![電腦助手](../doc/assets/Computer.png)
 
 ---
 
@@ -216,7 +216,7 @@ DragonClaw 把所有可調參數都收攏到一個**統一設定面板**中，�
 - **安全設定** — 遠端連線認證、權杖管理、敏感操作二次確認等。
 - **儲存與重載** — 右下角「儲存設定」一鍵套用，右上角「重新載入」可捨棄變更並重讀。
 
-![統一設定](doc/assets/Settings.png)
+![統一設定](../doc/assets/Settings.png)
 
 ---
 
