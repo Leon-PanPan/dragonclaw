@@ -192,6 +192,20 @@ export const parseAssistantContent = (content) => {
   return { thinkingItems, toolCallItems };
 };
 
+/**
+ * 从 content 数组中提取纯 thinking 文本
+ * 用于 stopReason === 'thinking' 的独立思考消息
+ */
+export const extractThinkingFromContent = (content) => {
+  if (!Array.isArray(content)) return null
+  const parts = []
+  for (const item of content) {
+    if (item.type === 'thinking' && item.thinking) parts.push(item.thinking)
+    else if (item.type === 'text' && item.text) parts.push(item.text)
+  }
+  return parts.length > 0 ? parts.join('\n') : null
+};
+
 // 获取内容类型的显示标签
 export const getContentTypeLabel = (type) => {
   const labels = {

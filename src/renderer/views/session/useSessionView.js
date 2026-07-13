@@ -1,6 +1,6 @@
 import { ref, computed, reactive, watch, nextTick } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
-import { parseMessageContent, extractTextFromContent, getTextContentFromContent, parseAssistantContent } from '@/utils/messageParser'
+import { parseMessageContent, extractTextFromContent, getTextContentFromContent, parseAssistantContent, extractThinkingFromContent } from '@/utils/messageParser'
 import { wsManager, ConnectionState } from '@/core/websocket/manager'
 import { openExternal } from '@/core/ipc'
 import { useModelStore } from '@/stores/modelStore'
@@ -1136,6 +1136,7 @@ const _loadChatHistory = async (sessionKey) => {
           }
         }
       }
+      let lastThinkingTrack = null
       for (const msg of history.messages) {
         const time = formatMessageTime(msg.timestamp)
         if (msg.role === 'user') {
@@ -1147,25 +1148,47 @@ const _loadChatHistory = async (sessionKey) => {
           }
           messages.value.push({ id: `history_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'user', content: msg.content || [], time })
         } else if (msg.role === 'assistant') {
-          if (msg.stopReason === 'stop') {
-            const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const thinkingText = thinkingItems.map(t => t.content).join('\n') || null
+          if (msg.stopReason === 'thinking') {
+            // 独立 thinking 消息：推送到 messages，groupedMessages 会将其作为 pendingThinking 累积
+            const thinkingText = extractThinkingFromContent(msg.content || [])
             if (thinkingText) {
               messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkingText, thinkingText, thinkingDone: true, thinkingDuration: 0, time })
+              lastThinkingTrack = thinkingText
             }
-            for (const toolCall of toolCallItems) {
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingText ? thinkingText.substring(0, 50) : `调用 ${toolCall.name}`, thinkingText, hasResult: false, isError: false, time })
+          } else if (msg.stopReason === 'stop') {
+            const content = msg.content || []
+            const { thinkingItems, toolCallItems } = parseAssistantContent(content)
+            const pairedTexts = []
+            let pendingThinking = ''
+            for (const item of content) {
+              if (item.type === 'thinking') {
+                pendingThinking += (pendingThinking ? '\n' : '') + (item.thinking || '')
+              } else if (item.type === 'toolCall') {
+                pairedTexts.push(pendingThinking || null)
+                pendingThinking = ''
+              }
             }
-            // 只 push 一次完整的 stop 消息（content 已包含 text+toolCall），不要额外 push text-only stop
-            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: msg.content || [], stopReason: 'stop', time })
+            const allThinking = thinkingItems.map(t => t.content).join('\n') || null
+            if (pendingThinking || allThinking) {
+              const thinkText = pendingThinking || allThinking
+              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkText, thinkingText: thinkText, thinkingDone: true, thinkingDuration: 0, time })
+            }
+            for (let i = 0; i < toolCallItems.length; i++) {
+              const toolCall = toolCallItems[i]
+              const tcThinking = pairedTexts[i] || lastThinkingTrack || null
+              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: tcThinking ? tcThinking.substring(0, 50) : `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
+            }
+            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: content, stopReason: 'stop', time })
+            lastThinkingTrack = null
           } else if (msg.stopReason === 'toolUse') {
             const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const thinkingSummary = thinkingItems.map(t => t.content).join(' ').substring(0, 50)
-            // 注意：toolUse 消息中的 text 内容会与同 run 的 stop 消息合并，
-            // 不需要额外 push 独立的 text-only stop（避免重复显示）
+            const contentThinking = thinkingItems.map(t => t.content).join('\n') || null
+            const tcThinking = contentThinking || lastThinkingTrack || null
+            const thinkingSummary = tcThinking ? tcThinking.substring(0, 50) : null
             for (const toolCall of toolCallItems) {
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, hasResult: false, isError: false, time })
+              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
             }
+            lastThinkingTrack = null
           }
         } else if (msg.role === 'toolResult') {
           const toolCallId = msg.toolCallId
@@ -1252,6 +1275,7 @@ export const loadMoreHistory = async () => {
     const history = await wsManager.getChatHistory(sessionKey, historyLimit.value)
     if (history?.messages?.length > 0) {
       messages.value = []; sessionTasks.value.splice(0, sessionTasks.value.length)
+      let lastThinkingTrack = null
       for (const msg of history.messages) {
         const time = formatMessageTime(msg.timestamp)
         if (msg.role === 'user') {
@@ -1259,28 +1283,46 @@ export const loadMoreHistory = async () => {
           if (text?.includes('<<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>')) { const taskInfo = parseInternalTaskMessage(text); if (taskInfo) addSubTask(taskInfo); continue }
           messages.value.push({ id: `history_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'user', content: msg.content || [], time })
         } else if (msg.role === 'assistant') {
-          if (msg.stopReason === 'stop') {
-            // 与 _loadChatHistory 一致：拆 stop.content 中的 thinking/toolCall 块到独立消息，
-            // 以便 groupedMessages 在 stop 上合并显示工具栏。
-            const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const thinkingText = thinkingItems.map(t => t.content).join('\n') || null
+          if (msg.stopReason === 'thinking') {
+            const thinkingText = extractThinkingFromContent(msg.content || [])
             if (thinkingText) {
               messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkingText, thinkingText, thinkingDone: true, thinkingDuration: 0, time })
+              lastThinkingTrack = thinkingText
             }
-            for (const toolCall of toolCallItems) {
-              const thinkingSummary = thinkingText ? thinkingText.substring(0, 50) : `调用 ${toolCall.name}`
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary, thinkingText, hasResult: false, isError: false, time })
+          } else if (msg.stopReason === 'stop') {
+            const content = msg.content || []
+            const { thinkingItems, toolCallItems } = parseAssistantContent(content)
+            const pairedTexts = []
+            let pendingThinking = ''
+            for (const item of content) {
+              if (item.type === 'thinking') {
+                pendingThinking += (pendingThinking ? '\n' : '') + (item.thinking || '')
+              } else if (item.type === 'toolCall') {
+                pairedTexts.push(pendingThinking || null)
+                pendingThinking = ''
+              }
             }
-            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: msg.content || [], stopReason: 'stop', time })
+            const allThinking = thinkingItems.map(t => t.content).join('\n') || null
+            if (pendingThinking || allThinking) {
+              const thinkText = pendingThinking || allThinking
+              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkText, thinkingText: thinkText, thinkingDone: true, thinkingDuration: 0, time })
+            }
+            for (let i = 0; i < toolCallItems.length; i++) {
+              const toolCall = toolCallItems[i]
+              const tcThinking = pairedTexts[i] || lastThinkingTrack || null
+              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: tcThinking ? tcThinking.substring(0, 50) : `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
+            }
+            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: content, stopReason: 'stop', time })
+            lastThinkingTrack = null
           } else if (msg.stopReason === 'toolUse') {
             const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const thinkingSummary = thinkingItems.map(t => t.content).join(' ').substring(0, 50)
-            const thinkingText = thinkingItems.map(t => t.content).join('\n') || null
-            // 注意：toolUse 消息中的 text 内容会与同 run 的 stop 消息合并，
-            // 不需要额外 push 独立的 text-only stop（避免重复显示）
+            const contentThinking = thinkingItems.map(t => t.content).join('\n') || null
+            const tcThinking = contentThinking || lastThinkingTrack || null
+            const thinkingSummary = tcThinking ? tcThinking.substring(0, 50) : null
             for (const toolCall of toolCallItems) {
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, thinkingText, hasResult: false, isError: false, time })
+              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
             }
+            lastThinkingTrack = null
           }
         } else if (msg.role === 'toolResult') {
           const toolCallId = msg.toolCallId; const isError = msg.isError || false

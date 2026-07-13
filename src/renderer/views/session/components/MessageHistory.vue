@@ -13,7 +13,6 @@
       <h3>开始对话</h3>
       <p>输入消息开始与{{ currentAgentName || '助手' }}对话</p>
     </div>
-
     <template
       v-for="(group, index) in displayGroupedMessages"
       :key="group.id || index"
@@ -50,6 +49,7 @@
               class="timeline-item timeline-item-clickable"
               @click.stop="onTimelineClick(msg)"
             >
+            {{ msg }}
               <div class="timeline-left">
                 <div :class="['timeline-dot', getTimelineDotClass(msg)]"></div>
                 <div class="timeline-line"></div>

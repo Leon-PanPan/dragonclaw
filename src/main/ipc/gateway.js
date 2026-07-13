@@ -807,11 +807,11 @@ ipcMain.handle(CH.START_WS_PROXY, async (event, { host, port, token, origin }) =
 
           wsProxyRemote.on('open', () => { console.log('[ws-proxy] 远程网关已连接'); });
           wsProxyRemote.on('message', (data) => { if (clientWs.readyState === 1) clientWs.send(data.toString()); });
-          wsProxyRemote.on('close', (code, reason) => { if (clientWs.readyState === 1) clientWs.close(code, reason?.toString()); });
+          wsProxyRemote.on('close', (code, reason) => { if (clientWs.readyState === 1) clientWs.close((typeof code === 'number' && code >= 1000 && code <= 4999) ? code : 1000, reason?.toString()); });
           wsProxyRemote.on('error', (err) => { console.error(`[ws-proxy] 远程错误: ${err.message}`); if (clientWs.readyState === 1) clientWs.close(1011, err.message); });
 
           clientWs.on('message', (data) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.send(data.toString()); });
-          clientWs.on('close', (code, reason) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.close(code, reason?.toString()); });
+          clientWs.on('close', (code, reason) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.close((typeof code === 'number' && code >= 1000 && code <= 4999) ? code : 1000, reason?.toString()); });
           clientWs.on('error', (err) => { console.error(`[ws-proxy] 客户端错误: ${err.message}`); });
         });
 
