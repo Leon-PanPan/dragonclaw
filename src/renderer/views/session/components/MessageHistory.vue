@@ -26,174 +26,80 @@
             <span class="message-role">我</span>
             <span class="message-time">{{ group.item.time }}</span>
           </div>
-          <div class="message-text markdown-content" v-html="getMessageHtml(group.item)" @click="handleMessageClick"></div>
+          <div class="message-text markdown-content" v-html="renderTextContent(getUserText(group.item.content))" @click="handleMessageClick"></div>
         </div>
       </div>
 
       <div
-        v-else-if="group.type === 'assistantReply'"
+        v-else-if="group.type === 'assistantRun'"
         class="assistant-group"
       >
-        <div v-if="reasoningVisibleEnabled && group.toolItems && group.toolItems.length > 0" class="tool-summary-bar tool-summary-top">
-          <div class="tool-summary-header" @click="toggleToolSummary(group)">
-            <span class="tool-summary-text">
-              <span class="tool-agent-badge">{{ currentAgentName || '助手' }}</span>
-              <span style="margin-left:5px;">思考 {{ group.toolThinkingCount }} 次 · 🔧 {{ group.toolItems.length }} 次工具调用</span>
-            </span>
-            <span class="tool-summary-toggle">{{ isToolExpanded(group) ? '▼' : '▶' }}</span>
-          </div>
-          <div v-if="isToolExpanded(group)" class="tool-summary-body">
-            <div
-              v-for="msg in group.toolItems"
-              :key="msg.id"
-              class="timeline-item timeline-item-clickable"
-              @click.stop="onTimelineClick(msg)"
-            >
-            {{ msg }}
-              <div class="timeline-left">
-                <div :class="['timeline-dot', getTimelineDotClass(msg)]"></div>
-                <div class="timeline-line"></div>
-              </div>
-              <div class="timeline-content">
-                <div v-if="msg.thinkingText" class="timeline-thinking">{{ msg.thinkingText }}</div>
-                <div :class="['timeline-card', getTimelineCardClass(msg)]">
-                  <span class="timeline-icon">{{ getTimelineIcon(msg) }}</span>
-                  <span class="timeline-tool">{{ getToolNameCN(msg.toolName) }}</span>
-                  <span class="timeline-desc">{{ getToolCmdDisplay(msg) || (msg.isError ? '执行失败' : '执行成功') }}</span>
-                  <span class="timeline-arrow">›</span>
-                  <span class="timeline-time">{{ msg.time }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="message-item assistant">
+        <div v-for="item in group.items" :key="item.id" class="message-item assistant">
           <div class="message-content">
-            <div v-if="reasoningVisibleEnabled && group.thinkingMsg && (!group.toolItems || group.toolItems.length === 0)" class="thinking-inline">
-              <div class="thinking-inline-header" @click="toggleThinkingInline(group)">
-                <icon-command style="font-size:12px;color:var(--color-text-3);flex-shrink:0;" />
-                <span class="thinking-inline-status">
-                  {{ currentAgentName || '助手' }}
-                  <template v-if="group.thinkingMsg.thinkingDone">
-                    · 已思考（{{ group.thinkingMsg.thinkingDuration }}秒）
-                  </template>
-                  <template v-else>
-                    · <icon-loading :size="12" style="margin-right:4px;" />思考中...
-                  </template>
-                </span>
-                <span class="thinking-inline-toggle">{{ isThinkingExpanded(group) ? '▼' : '▶' }}</span>
+            <template v-for="(ci, cj) in item.content" :key="item.id + '_' + cj">
+              <!-- 思考：可折叠的灰色文本 -->
+              <div v-if="ci.type === 'thinking'" class="reasoning-inline">
+                <div class="reasoning-toggle" @click="toggleItemExpand(item.id + '_t_' + cj)">
+                  <span class="reasoning-label">💭 思考{{ isItemExpanded(item.id + '_t_' + cj) ? '' : '...' }}</span>
+                  <span class="reasoning-chevron">{{ isItemExpanded(item.id + '_t_' + cj) ? '▼' : '▶' }}</span>
+                </div>
+                <div v-if="isItemExpanded(item.id + '_t_' + cj)" class="reasoning-body" v-html="renderThinkingContent(ci.thinking)"></div>
               </div>
-              <div v-if="isThinkingExpanded(group)" class="thinking-inline-body">
-                <div class="thinking-inline-content" v-html="getThinkingHtml(group.thinkingMsg)"></div>
+              <!-- 工具调用：简洁卡片 -->
+              <div
+                v-else-if="ci.type === 'toolCall'"
+                class="tool-inline-card"
+                @click.stop="onContentTimelineClick(item, ci)"
+              >
+                <span :class="['tool-inline-dot', getContentDotClass(item, ci)]"></span>
+                <span class="tool-inline-icon">{{ getToolIcon(ci.name) }}</span>
+                <span class="tool-inline-name">{{ getToolNameCN(ci.name) }}</span>
+                <span class="tool-inline-desc">{{ getContentToolDesc(item, ci) }}</span>
               </div>
-            </div>
-
-            <div v-if="getMessageHtml(group.item)" class="message-text markdown-content" v-html="getMessageHtml(group.item)" @click="handleMessageClick"></div>
-
-            <div v-if="getGroupSubTasks(group).length > 0" class="subtask-inline-list">
-              <div v-for="task in getGroupSubTasks(group).filter(t => t)" :key="task.id" class="subtask-inline-item" :class="{ done: task.status === 'done' }">
-                <span class="subtask-inline-dot" :style="{ color: task.status === 'done' ? '#00B42A' : '#165dff' }">{{ task.status === 'done' ? '✓' : '○' }}</span>
-                <span class="subtask-inline-agent">{{ getTaskAgentName(task.agentId) }}</span>
-                <span class="subtask-inline-title">{{ task.title }}</span>
-              </div>
-            </div>
-
-            <div v-if="group.runStats && group.runStats.tokenTotal > 0" class="message-stats-row">
-              <span class="stats-context">{{ getContextInfo(group) }}</span>
+              <!-- 文本正文 -->
+              <div
+                v-else-if="ci.type === 'text' && ci.text"
+                class="message-text markdown-content"
+                v-html="renderTextContent(ci.text)"
+                @click="handleMessageClick"
+              ></div>
+            </template>
+            <!-- usage stats -->
+            <div v-if="item.usage && item.usage.total" class="message-stats-row">
+              <span class="stats-context">
+                {{ formatTokens(item.usage.input) }} → {{ formatTokens(item.usage.output) }}
+                <span v-if="item.usage.cacheRead"> · 🗄️ {{ formatTokens(item.usage.cacheRead) }}</span>
+              </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div
-        v-else-if="reasoningVisibleEnabled && group.item && getMessageHtml(group.item)"
-        :class="['message-item', group.item.role]"
-      >
-        <div class="message-avatar">
-          <a-avatar :style="{ backgroundColor: '#94A3B8' }">
-            <icon-robot />
-          </a-avatar>
-        </div>
-        <div class="message-content">
-          <div class="message-text" v-html="getMessageHtml(group.item)"></div>
         </div>
       </div>
     </template>
 
-    <!-- 实时回复区域：仅在流式/思考中时显示，紧跟历史消息之后 -->
+    <!-- 实时回复区域：使用 content 数组格式 -->
     <div v-if="isStreaming || isThinking" class="assistant-group streaming-block">
-      <div v-if="reasoningVisibleEnabled && streamingToolItems.length > 0" class="tool-summary-bar tool-summary-top streaming-tools">
-        <div class="tool-summary-header" @click="emit('update:showStreamingTools', !showStreamingTools)">
-          <span class="tool-summary-text">
-            <span class="tool-agent-badge">{{ currentAgentName || '助手' }}</span>
-            <span style="margin-left:5px;">思考 {{ streamingThinkingCount }} 次 · 🔧 {{ streamingToolItems.length }} 次工具调用</span>
-          </span>
-          <span class="tool-summary-toggle">{{ showStreamingTools ? '▼' : '▶' }}</span>
-        </div>
-        <div v-if="showStreamingTools" class="tool-summary-body">
-          <div
-            v-for="msg in streamingToolItems"
-            :key="msg.id"
-            class="timeline-item timeline-item-clickable"
-            @click.stop="onTimelineClick(msg)"
-          >
-            <div class="timeline-left">
-              <div :class="['timeline-dot', getTimelineDotClass(msg)]"></div>
-              <div class="timeline-line"></div>
-            </div>
-            <div class="timeline-content">
-              <div v-if="msg.thinkingText" class="timeline-thinking">{{ msg.thinkingText }}</div>
-              <div :class="['timeline-card', getTimelineCardClass(msg)]">
-                <span class="timeline-icon">{{ getTimelineIcon(msg) }}</span>
-                <span class="timeline-tool">{{ getToolNameCN(msg.toolName) }}</span>
-                <span class="timeline-desc">{{ getToolCmdDisplay(msg) || (msg.isError ? '执行失败' : msg.hasResult ? '执行成功' : '正在执行...') }}</span>
-                <span class="timeline-arrow">›</span>
-                <span class="timeline-time">{{ msg.time }}</span>
+      <template v-if="latestThinkingMsg || streamingToolItems.length > 0 || streamingResponse">
+        <div class="message-item assistant">
+          <div class="message-content">
+            <div v-if="latestThinkingMsg" class="thinking-inline">
+              <div class="thinking-inline-header">
+                <icon-command style="font-size:12px;color:var(--color-text-3);flex-shrink:0;" />
+                <span class="thinking-inline-status">{{ currentAgentName || '助手' }} · 思考中...</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="message-item assistant">
-        <div class="message-content">
-          <div v-if="reasoningVisibleEnabled && latestThinkingMsg && streamingToolItems.length === 0" class="thinking-inline streaming-thinking">
-            <div class="thinking-inline-header" @click="emit('update:showStreamingThinking', !showStreamingThinking)">
-              <icon-command style="font-size:12px;color:var(--color-text-3);flex-shrink:0;" />
-              <span class="thinking-inline-status">
-                {{ currentAgentName || '助手' }}
-                <template v-if="latestThinkingMsg.thinkingDone">
-                  · 已思考（{{ latestThinkingMsg.thinkingDuration }}秒）
-                </template>
-                <template v-else>
-                  · <icon-loading :size="12" style="margin-right:4px;" />思考中...
-                </template>
-              </span>
-              <span class="thinking-inline-toggle">{{ showStreamingThinking ? '▼' : '▶' }}</span>
-            </div>
-            <div v-if="showStreamingThinking" class="thinking-inline-body">
-              <div class="thinking-inline-content" v-html="getThinkingHtml(latestThinkingMsg)"></div>
+            <div v-if="streamingResponse" :class="['message-text', isStreamingError ? 'streaming-text-error' : 'streaming-text', 'markdown-content']" v-html="throttledStreamingHtml"></div>
+            <div v-if="!streamingResponse && !latestThinkingMsg" class="message-text thinking-text">
+              <a-spin size="small" /><span>正在思考中，请稍候...</span>
             </div>
           </div>
-
-          <div v-if="streamingResponse" :class="['message-text', isStreamingError ? 'streaming-text-error' : 'streaming-text', 'markdown-content']" v-html="throttledStreamingHtml"></div>
-
-          <div v-if="!streamingResponse && !latestThinkingMsg && isThinking" class="message-text thinking-text">
-            <a-spin size="small" /><span>正在思考中，请稍候...</span>
-          </div>
-
-          <!-- <div class="streaming-indicator" v-if="isStreaming">
-            <icon-loading :size="12" style="margin-right:4px;" />正在生成...
-          </div> -->
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, inject, nextTick, ref, watch } from 'vue'
+import { computed, inject, nextTick, reactive, ref, watch } from 'vue'
 
 const props = defineProps({
   // 历史消息
@@ -234,7 +140,7 @@ const displayGroupedMessages = computed(() => {
   if (!list || list.length === 0) return list
   if (!(props.isStreaming || props.isThinking)) return list
   const last = list[list.length - 1]
-  if (last && last.type === 'assistantReply') return list.slice(0, -1)
+  if (last && (last.type === 'assistantRun' || last.type === 'assistantReply')) return list.slice(0, -1)
   return list
 })
 
@@ -249,29 +155,123 @@ const scrollToBottomInternal = () => {
 }
 
 watch(
-  () => [props.messages.length, props.streamingResponse, props.isThinking, props.latestThinkingMsg?.thinkingBuffer?.length || 0, props.streamingToolItems.length],
+  () => [props.messages.length, props.streamingResponse, props.isThinking, props.streamingToolItems.length],
   () => { scrollToBottomInternal() }
 )
 
 const A = inject('sessionActions')
 const {
-  getMessageHtml,
-  handleMessageClick,
-  getThinkingHtml,
-  getTimelineDotClass,
-  getTimelineCardClass,
-  getTimelineIcon,
   getToolNameCN,
-  getToolCmdDisplay,
+  getToolIcon,
   isToolExpanded,
   toggleToolSummary,
   isThinkingExpanded,
   toggleThinkingInline,
-  getGroupSubTasks,
-  getTaskAgentName,
-  getContextInfo,
+  formatTokens,
   handleTimelineClick,
+  handleMessageClick,
 } = A
+
+// === 新模板辅助函数 ===
+
+import { extractTextFromContent, parseMessageContent } from '@/utils/messageParser'
+
+function getUserText(content) {
+  return extractTextFromContent(content)
+}
+
+function getRunToolCount(group) {
+  let count = 0
+  for (const item of (group.items || [])) {
+    for (const ci of (item.content || [])) {
+      if (ci.type === 'toolCall') count++
+    }
+  }
+  return count
+}
+
+function getRunThinkingCount(group) {
+  let count = 0
+  for (const item of (group.items || [])) {
+    for (const ci of (item.content || [])) {
+      if (ci.type === 'thinking') count++
+    }
+  }
+  return count
+}
+
+function getContentDotClass(item, ci) {
+  const result = item.toolResults && item.toolResults[ci.id]
+  if (!result) return 'dot-loading'
+  if (result.isError) return 'dot-error'
+  return 'dot-success'
+}
+
+function getContentCardClass(item, ci) {
+  const result = item.toolResults && item.toolResults[ci.id]
+  if (!result) return 'card-loading'
+  if (result.isError) return 'card-error'
+  return 'card-success'
+}
+
+function getContentToolDesc(item, ci) {
+  const name = ci.name
+  let desc = ''
+  try {
+    const args = typeof ci.arguments === 'string' ? JSON.parse(ci.arguments) : ci.arguments
+    if (name === 'exec' && args?.command) desc = '⚡ ' + args.command
+    else if (name === 'write' && (args?.path || args?.file_path)) desc = '✏️ ' + (args.path || args.file_path).split('/').pop()
+    else if (name === 'read' && (args?.path || args?.file_path)) desc = '📖 ' + (args.path || args.file_path).split('/').pop()
+    else if (name === 'web_search' && args?.query) desc = '🔍 ' + args.query
+    else if (name === 'web_fetch' && args?.url) desc = '🌐 ' + args.url
+    else desc = JSON.stringify(args).substring(0, 60)
+    if (desc.length > 50) desc = desc.substring(0, 50) + '...'
+  } catch {}
+  if (!desc) {
+    const result = item.toolResults && item.toolResults[ci.id]
+    desc = result ? (result.isError ? '执行失败' : '执行成功') : '执行中...'
+  }
+  return desc
+}
+
+function renderThinkingContent(text) {
+  if (!text) return ''
+  try { return parseMessageContent(text).html || text } catch { return text }
+}
+
+function renderTextContent(text) {
+  if (!text) return ''
+  try { return parseMessageContent(text).html || text } catch { return text }
+}
+
+const itemExpandState = reactive({})
+function isItemExpanded(key) { return !!itemExpandState[key] }
+function toggleItemExpand(key) { itemExpandState[key] = !itemExpandState[key] }
+
+function onContentTimelineClick(item, ci) {
+  const result = item.toolResults && item.toolResults[ci.id]
+  const toolMsg = {
+    toolName: ci.name,
+    toolCallId: ci.id,
+    args: ci.arguments,
+    thinkingText: '',
+    isError: result?.isError || false,
+    hasResult: !!result,
+    result: result?.content || '',
+    resultContent: result?.content || '',
+    time: item.time,
+  }
+  // 找前一个 thinking 的文本
+  for (let i = (item.content || []).indexOf(ci) - 1; i >= 0; i--) {
+    const prev = item.content[i]
+    if (prev && prev.type === 'thinking') {
+      toolMsg.thinkingText = prev.thinking
+      break
+    }
+  }
+  emit('timeline-click', toolMsg)
+  if (handleTimelineClick) handleTimelineClick(toolMsg)
+}
 
 defineExpose({ messageListRef })
 
@@ -281,12 +281,6 @@ function onScroll(e) {
   if (el.scrollTop < 50) {
     emit('load-more')
   }
-}
-
-function onTimelineClick(msg) {
-  // 同时触发 emit 和 inject 调用，确保抽屉打开
-  emit('timeline-click', msg)
-  if (handleTimelineClick) handleTimelineClick(msg)
 }
 </script>
 
@@ -987,5 +981,95 @@ function onTimelineClick(msg) {
 @keyframes loadingPulse {
   0%, 100% { opacity: 0.95; }
   50% { opacity: 1; }
+}
+
+/* === 新版内联思考 + 工具调用样式 === */
+
+.reasoning-inline {
+  margin: 4px 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.025);
+  overflow: hidden;
+}
+
+.reasoning-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  color: var(--color-text-3);
+  transition: color 0.15s;
+}
+.reasoning-toggle:hover {
+  color: rgb(var(--primary-6));
+}
+
+.reasoning-label {
+  font-weight: 500;
+}
+
+.reasoning-chevron {
+  font-size: 9px;
+  color: var(--color-text-4);
+}
+
+.reasoning-body {
+  padding: 6px 10px 8px 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.reasoning-body :deep(p) { margin: 0 0 4px 0; font-size: 13px; color: var(--color-text-2); line-height: 1.55; }
+.reasoning-body :deep(code) { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.reasoning-body :deep(pre) { background: #1e1e1e; color: #d4d4d4; padding: 8px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 200px; }
+.reasoning-body :deep(pre code) { background: transparent; padding: 0; }
+
+.tool-inline-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 2px 0;
+  border-radius: 8px;
+  background: #F7F8FA;
+  border: 1px solid var(--color-border-2, #e5e6e8);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 13px;
+}
+.tool-inline-card:hover {
+  background: #EEF0F4;
+  border-color: rgb(var(--primary-6));
+}
+
+.tool-inline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tool-inline-dot.dot-loading { background: rgb(var(--warning-6)); }
+.tool-inline-dot.dot-success { background: rgb(var(--success-6)); }
+.tool-inline-dot.dot-error   { background: rgb(var(--danger-6)); }
+
+.tool-inline-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.tool-inline-name {
+  font-weight: 600;
+  color: var(--color-text-2);
+  flex-shrink: 0;
+}
+
+.tool-inline-desc {
+  color: var(--color-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  font-size: 12px;
 }
 </style>

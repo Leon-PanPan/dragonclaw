@@ -255,13 +255,44 @@ watch(streamingResponse, (val) => {
 export const parsedStreamingContent = computed(() => parseMessageContent(streamingResponse.value))
 
 export const streamingToolItems = computed(() => {
+  // 找最后一条 assistant 消息中（最后一个 stop 之后）的 toolCall 项，转为兼容旧工具抽屉格式
   let lastStopIdx = -1
   for (let i = messages.value.length - 1; i >= 0; i--) {
-    if (messages.value[i].stopReason === 'stop') { lastStopIdx = i; break }
+    if (messages.value[i].role === 'assistant' && messages.value[i].stopReason === 'stop') { lastStopIdx = i; break }
   }
-  return messages.value.filter((m, idx) =>
-    idx > lastStopIdx && m.role === 'assistant' && m.stopReason === 'toolUse'
-  )
+  const items = []
+  for (let i = lastStopIdx + 1; i < messages.value.length; i++) {
+    const m = messages.value[i]
+    if (m.role === 'assistant') {
+      for (const ci of (m.content || [])) {
+        if (ci.type === 'toolCall') {
+          // 找前一个 thinking
+          let thinkText = null
+          const ciIdx = m.content.indexOf(ci)
+          if (ciIdx > 0 && m.content[ciIdx - 1]?.type === 'thinking') {
+            thinkText = m.content[ciIdx - 1].thinking
+          }
+          const result = m.toolResults && m.toolResults[ci.id]
+          items.push({
+            id: `stream_${ci.id}`,
+            role: 'assistant',
+            stopReason: 'toolUse',
+            toolCallId: ci.id,
+            toolName: ci.name,
+            args: ci.arguments,
+            thinkingText: thinkText,
+            thinkingSummary: thinkText ? thinkText.substring(0, 50) : `调用 ${ci.name}`,
+            hasResult: !!result,
+            isError: result?.isError || false,
+            result: result?.content || '',
+            resultContent: result?.content || '',
+            time: m.time,
+          })
+        }
+      }
+    }
+  }
+  return items
 })
 
 export const streamingThinkingCount = computed(() => {
@@ -269,81 +300,34 @@ export const streamingThinkingCount = computed(() => {
 })
 
 export const latestThinkingMsg = computed(() => {
-  // 只返回"当前 run"的思考消息（由 currentThinkingMsgId 标识），
-  // 避免在用户发送新消息、lifecycle:start 事件尚未到达时显示上一次的思考内容
   if (!currentThinkingMsgId.value) return null
   const current = messages.value.find(m => m.id === currentThinkingMsgId.value)
+  // 支持新格式（content 数组）和旧格式（thinkingBuffer）
+  if (current && current.content && current.content.length > 0) {
+    const thinkItem = current.content.find(c => c.type === 'thinking')
+    if (thinkItem) {
+      return { ...current, thinkingBuffer: thinkItem.thinking, thinkingDone: current.thinkingDone !== false, thinkingDuration: current.thinkingDuration || 0 }
+    }
+  }
   return current || null
 })
 
 export const groupedMessages = computed(() => {
   const result = []
-  let pendingThinking = null
-  let pendingToolItems = []
-
-  const flushPending = (syntheticId) => {
-    if (pendingThinking || pendingToolItems.length > 0) {
-      const toolThinkingCount = pendingThinking ? pendingToolItems.length : 0
-      const syntheticItem = {
-        role: 'assistant',
-        stopReason: 'stop',
-        content: [],
-        id: syntheticId || `pending_flush_${result.length}`,
-        isPendingFlush: true,
+  for (const msg of messages.value) {
+    if (msg.role === 'user') {
+      result.push({ type: 'user', item: msg, id: msg.id || `user_${result.length}` })
+    } else if (msg.role === 'assistant') {
+      // 连续 assistant 消息归为同一组（一个 run 由多条消息组成）
+      const last = result[result.length - 1]
+      if (last && last.type === 'assistantRun') {
+        last.items.push(msg)
+      } else {
+        result.push({ type: 'assistantRun', items: [msg], id: msg.id || `run_${result.length}` })
       }
-      result.push({
-        type: 'assistantReply',
-        item: syntheticItem,
-        thinkingMsg: pendingThinking,
-        toolItems: [...pendingToolItems],
-        toolThinkingCount,
-        id: syntheticItem.id,
-      })
-      pendingThinking = null
-      pendingToolItems = []
     }
+    // toolResult 已在 _loadChatHistory / handleWsMessage 中合并到 assistant 消息的 toolResults
   }
-
-  for (let i = 0; i < messages.value.length; i++) {
-    const msg = messages.value[i]
-    if (msg.role === 'assistant' && msg.stopReason === 'thinking') {
-      pendingThinking = msg
-    } else if (msg.role === 'assistant' && msg.stopReason === 'toolUse') {
-      pendingToolItems.push(msg)
-    } else if (msg.role === 'assistant' && msg.stopReason === 'stop') {
-      // 总是把累积的 pendingThinking / pendingToolItems 合并到本 stop 消息。
-      // 原因：
-      // 1. 实时回复期间，messages 累积了 thinkingMsg + 多个 toolUse（来自 agent/* 事件），
-      //    chat.state=final 给的 stop.content 通常是纯文本（不含 toolCall），
-      //    若不合并会导致工具调用被 split 成独立的 assistantReply，与 stop 自身分离显示。
-      // 2. 历史加载（_loadChatHistory / loadMoreHistory）已经把 stop.content 中的
-      //    thinking/toolCall 拆出到独立消息，合并后即在最后一项 assistantReply 上呈现工具栏。
-      const toolThinkingCount = pendingThinking ? pendingToolItems.length : 0
-      result.push({
-        type: 'assistantReply',
-        item: msg,
-        thinkingMsg: pendingThinking,
-        toolItems: [...pendingToolItems],
-        toolThinkingCount,
-        id: msg.id || `reply_${i}`,
-      })
-      pendingThinking = null
-      pendingToolItems = []
-    } else if (msg.role === 'toolResult') {
-      // toolResult 的数据已经在 _loadChatHistory 中合并到对应 toolUse 消息的
-      // hasResult/result/resultContent 字段上，无需在 groupedMessages 中单独渲染
-      // 这里跳过即可
-    } else {
-      // 其他类型（user 消息等）：先 flush 累积的 pending，再 push 当前消息
-      // 这样 user 消息之前未合并的 toolUse/思考消息不会丢失
-      flushPending(`before_other_${i}`)
-      result.push({ type: 'message', item: msg, id: msg.id || `msg_${i}` })
-    }
-  }
-
-  // 末尾 flush：当历史以 toolUse 结尾（无 stop 消息）时，把累积的 pendingToolItems 也输出为 assistantReply
-  flushPending('end_flush')
-
   return result
 })
 
@@ -524,9 +508,8 @@ export const getMessageHtml = (msg) => {
     const text = msg.thinkingBuffer || '思考中...'
     return '<span style="color: var(--color-text-4); font-size: 12px;">' + text.substring(0, 100) + '</span>'
   } else if (msg.role === 'assistant' && msg.stopReason === 'toolUse') {
-    const toolName = msg.toolName || '未知工具'
-    const desc = msg.thinkingSummary || ''
-    return '<span style="color: var(--color-text-3); font-size: 12px;">\u{1F527} ' + toolName + (desc ? ': ' + desc.substring(0, 50) : '') + '</span>'
+    // 工具调用通过 timeline 渲染，不在正文区显示思考摘要
+    return ''
   } else if (msg.role === 'assistant' && msg.stopReason === 'error') {
     // 错误消息气泡：与 stop 消息相同样式，红色背景突出显示
     const text = extractTextFromContent(msg.content)
@@ -1136,7 +1119,6 @@ const _loadChatHistory = async (sessionKey) => {
           }
         }
       }
-      let lastThinkingTrack = null
       for (const msg of history.messages) {
         const time = formatMessageTime(msg.timestamp)
         if (msg.role === 'user') {
@@ -1148,60 +1130,38 @@ const _loadChatHistory = async (sessionKey) => {
           }
           messages.value.push({ id: `history_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'user', content: msg.content || [], time })
         } else if (msg.role === 'assistant') {
-          if (msg.stopReason === 'thinking') {
-            // 独立 thinking 消息：推送到 messages，groupedMessages 会将其作为 pendingThinking 累积
-            const thinkingText = extractThinkingFromContent(msg.content || [])
-            if (thinkingText) {
-              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkingText, thinkingText, thinkingDone: true, thinkingDuration: 0, time })
-              lastThinkingTrack = thinkingText
-            }
-          } else if (msg.stopReason === 'stop') {
-            const content = msg.content || []
-            const { thinkingItems, toolCallItems } = parseAssistantContent(content)
-            const pairedTexts = []
-            let pendingThinking = ''
-            for (const item of content) {
-              if (item.type === 'thinking') {
-                pendingThinking += (pendingThinking ? '\n' : '') + (item.thinking || '')
-              } else if (item.type === 'toolCall') {
-                pairedTexts.push(pendingThinking || null)
-                pendingThinking = ''
-              }
-            }
-            const allThinking = thinkingItems.map(t => t.content).join('\n') || null
-            if (pendingThinking || allThinking) {
-              const thinkText = pendingThinking || allThinking
-              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkText, thinkingText: thinkText, thinkingDone: true, thinkingDuration: 0, time })
-            }
-            for (let i = 0; i < toolCallItems.length; i++) {
-              const toolCall = toolCallItems[i]
-              const tcThinking = pairedTexts[i] || lastThinkingTrack || null
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: tcThinking ? tcThinking.substring(0, 50) : `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
-            }
-            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: content, stopReason: 'stop', time })
-            lastThinkingTrack = null
-          } else if (msg.stopReason === 'toolUse') {
-            const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const contentThinking = thinkingItems.map(t => t.content).join('\n') || null
-            const tcThinking = contentThinking || lastThinkingTrack || null
-            const thinkingSummary = tcThinking ? tcThinking.substring(0, 50) : null
-            for (const toolCall of toolCallItems) {
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
-            }
-            lastThinkingTrack = null
-          }
+          // 按 API 协议原样保留 content 数组，不做拆分
+          // toolResult 在后面单独处理合并
+          messages.value.push({
+            id: `history_ast_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            role: 'assistant',
+            content: msg.content || [],
+            stopReason: msg.stopReason,
+            time,
+            _origTimestamp: msg.timestamp,
+            usage: msg.usage || null,
+            toolResults: {},
+            thinkingDone: true,
+            thinkingDuration: 0,
+          })
         } else if (msg.role === 'toolResult') {
+          // 合并到前一条 assistant 消息的 toolResults 中
           const toolCallId = msg.toolCallId
           const isError = msg.isError || false
-          const toolCallEntry = messages.value.find(m => m.role === 'assistant' && m.stopReason === 'toolUse' && m.toolCallId === toolCallId)
-          if (toolCallEntry) {
-            toolCallEntry.isError = isError; toolCallEntry.resultSummary = isError ? '执行失败' : '执行成功'; toolCallEntry.hasResult = true
-            if (msg.content) {
-              const text = typeof msg.content === 'string' ? msg.content : extractTextFromContent(msg.content)
-              toolCallEntry.result = text; toolCallEntry.resultContent = text
+          let resultText = ''
+          if (msg.content) {
+            resultText = typeof msg.content === 'string' ? msg.content : extractTextFromContent(msg.content)
+          }
+          // 找到最近包含此 toolCallId 的 assistant 消息
+          for (let i = messages.value.length - 1; i >= 0; i--) {
+            const m = messages.value[i]
+            if (m.role === 'assistant') {
+              const hasTool = (m.content || []).some(c => c.type === 'toolCall' && c.id === toolCallId)
+              if (hasTool) {
+                m.toolResults[toolCallId] = { isError, content: resultText, toolName: msg.toolName || 'unknown' }
+                break
+              }
             }
-          } else {
-            messages.value.push({ id: `history_toolresult_${toolCallId}_${Date.now()}`, role: 'toolResult', toolCallId, toolName: msg.toolName || 'unknown', isError, time })
           }
         }
       }
@@ -1210,8 +1170,7 @@ const _loadChatHistory = async (sessionKey) => {
   finally {
     if (savedPendingMessages?.length > 0) messages.value.push(...savedPendingMessages)
 
-    // 合并切走时暂存的 draft（实时回复期间切换会话，未完成 run 的累积内容）
-    // 合并策略：跳过 messages 中已存在的同 content 的 user 消息；thinkingMsg/toolUse/stop 直接追加。
+    // 合并切走时暂存的 draft
     const draft = sessionDraftMap[sessionKey]
     if (draft && Array.isArray(draft) && draft.length > 0) {
       const existingUserKeys = new Set()
@@ -1236,20 +1195,21 @@ const _loadChatHistory = async (sessionKey) => {
     sessionStats.value = computeSessionStatsFromMessages()
     isLoadingHistory.value = false
 
-    // 检测会话是否仍在运行：最后一条 assistant 消息是 toolUse 或 thinking（无 stop），
-    // 这种情况下设置 isThinking=true，UI 显示"等待中"，等待 WebSocket 推送新事件。
+    // 检测会话是否仍在运行：最后一条 assistant 消息无 stop
     const lastMsg = messages.value[messages.value.length - 1]
-    const isLastIncomplete = lastMsg && lastMsg.role === 'assistant' && (lastMsg.stopReason === 'toolUse' || lastMsg.stopReason === 'thinking')
+    const isLastIncomplete = lastMsg && lastMsg.role === 'assistant' && lastMsg.stopReason !== 'stop'
     if (isLastIncomplete && !currentRunId.value) {
-      // 检查所有 toolCall 是否都有对应的 toolResult
       let allCompleted = true
       for (const m of messages.value) {
-        if (m.role === 'assistant' && m.stopReason === 'toolUse' && !m.hasResult) {
-          allCompleted = false
-          break
+        if (m.role === 'assistant') {
+          for (const c of (m.content || [])) {
+            if (c.type === 'toolCall' && !(m.toolResults && m.toolResults[c.id])) {
+              allCompleted = false; break
+            }
+          }
         }
       }
-      if (!allCompleted || lastMsg.stopReason === 'thinking') {
+      if (!allCompleted) {
         isThinking.value = true
         isStreaming.value = true
       }
@@ -1275,7 +1235,6 @@ export const loadMoreHistory = async () => {
     const history = await wsManager.getChatHistory(sessionKey, historyLimit.value)
     if (history?.messages?.length > 0) {
       messages.value = []; sessionTasks.value.splice(0, sessionTasks.value.length)
-      let lastThinkingTrack = null
       for (const msg of history.messages) {
         const time = formatMessageTime(msg.timestamp)
         if (msg.role === 'user') {
@@ -1283,51 +1242,29 @@ export const loadMoreHistory = async () => {
           if (text?.includes('<<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>>')) { const taskInfo = parseInternalTaskMessage(text); if (taskInfo) addSubTask(taskInfo); continue }
           messages.value.push({ id: `history_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'user', content: msg.content || [], time })
         } else if (msg.role === 'assistant') {
-          if (msg.stopReason === 'thinking') {
-            const thinkingText = extractThinkingFromContent(msg.content || [])
-            if (thinkingText) {
-              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkingText, thinkingText, thinkingDone: true, thinkingDuration: 0, time })
-              lastThinkingTrack = thinkingText
-            }
-          } else if (msg.stopReason === 'stop') {
-            const content = msg.content || []
-            const { thinkingItems, toolCallItems } = parseAssistantContent(content)
-            const pairedTexts = []
-            let pendingThinking = ''
-            for (const item of content) {
-              if (item.type === 'thinking') {
-                pendingThinking += (pendingThinking ? '\n' : '') + (item.thinking || '')
-              } else if (item.type === 'toolCall') {
-                pairedTexts.push(pendingThinking || null)
-                pendingThinking = ''
-              }
-            }
-            const allThinking = thinkingItems.map(t => t.content).join('\n') || null
-            if (pendingThinking || allThinking) {
-              const thinkText = pendingThinking || allThinking
-              messages.value.push({ id: `history_thinking_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`, role: 'assistant', stopReason: 'thinking', thinkingBuffer: thinkText, thinkingText: thinkText, thinkingDone: true, thinkingDuration: 0, time })
-            }
-            for (let i = 0; i < toolCallItems.length; i++) {
-              const toolCall = toolCallItems[i]
-              const tcThinking = pairedTexts[i] || lastThinkingTrack || null
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: tcThinking ? tcThinking.substring(0, 50) : `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
-            }
-            messages.value.push({ id: `history_assistant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, role: 'assistant', content: content, stopReason: 'stop', time })
-            lastThinkingTrack = null
-          } else if (msg.stopReason === 'toolUse') {
-            const { thinkingItems, toolCallItems } = parseAssistantContent(msg.content || [])
-            const contentThinking = thinkingItems.map(t => t.content).join('\n') || null
-            const tcThinking = contentThinking || lastThinkingTrack || null
-            const thinkingSummary = tcThinking ? tcThinking.substring(0, 50) : null
-            for (const toolCall of toolCallItems) {
-              messages.value.push({ id: `history_toolcall_${toolCall.id}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: 'assistant', stopReason: 'toolUse', toolCallId: toolCall.id, toolName: toolCall.name, args: toolCall.arguments, thinkingSummary: thinkingSummary || `调用 ${toolCall.name}`, thinkingText: tcThinking, hasResult: false, isError: false, time })
-            }
-            lastThinkingTrack = null
-          }
+          messages.value.push({
+            id: `history_ast_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            role: 'assistant',
+            content: msg.content || [],
+            stopReason: msg.stopReason,
+            time,
+            _origTimestamp: msg.timestamp,
+            usage: msg.usage || null,
+            toolResults: {},
+            thinkingDone: true,
+            thinkingDuration: 0,
+          })
         } else if (msg.role === 'toolResult') {
           const toolCallId = msg.toolCallId; const isError = msg.isError || false
-          const toolCallEntry = messages.value.find(m => m.role === 'assistant' && m.stopReason === 'toolUse' && m.toolCallId === toolCallId)
-          if (toolCallEntry) { toolCallEntry.isError = isError; toolCallEntry.hasResult = true; if (msg.content) { const text = typeof msg.content === 'string' ? msg.content : extractTextFromContent(msg.content); toolCallEntry.result = text; toolCallEntry.resultContent = text } }
+          let resultText = ''
+          if (msg.content) { resultText = typeof msg.content === 'string' ? msg.content : extractTextFromContent(msg.content) }
+          for (let i = messages.value.length - 1; i >= 0; i--) {
+            const m = messages.value[i]
+            if (m.role === 'assistant') {
+              const hasTool = (m.content || []).some(c => c.type === 'toolCall' && c.id === toolCallId)
+              if (hasTool) { m.toolResults[toolCallId] = { isError, content: resultText, toolName: msg.toolName || 'unknown' }; break }
+            }
+          }
         }
       }
       if (history.messages.length < historyLimit.value) hasMoreHistory.value = false
@@ -1345,17 +1282,25 @@ export const loadMoreHistory = async () => {
 export const computeSessionStatsFromMessages = () => {
   const stats = { totalInputTokens: 0, totalOutputTokens: 0, totalTokens: 0, totalThinkingCount: 0, totalToolCallCount: 0, totalToolSuccessCount: 0, totalToolErrorCount: 0, totalRuns: 0 }
   for (const msg of messages.value) {
-    if (msg.stopReason === 'stop') {
-      stats.totalRuns++
-      if (msg.runStats) {
-        stats.totalInputTokens += msg.runStats.tokenInput || 0; stats.totalOutputTokens += msg.runStats.tokenOutput || 0
-        stats.totalTokens += msg.runStats.tokenTotal || 0; stats.totalThinkingCount += msg.runStats.thinkingCount || 0
-        stats.totalToolCallCount += msg.runStats.toolCallCount || 0
-        stats.totalToolSuccessCount += msg.runStats.toolSuccessCount || 0; stats.totalToolErrorCount += msg.runStats.toolErrorCount || 0
+    if (msg.role === 'assistant') {
+      if (msg.stopReason === 'stop') stats.totalRuns++
+      if (msg.usage) {
+        stats.totalInputTokens += msg.usage.input || 0
+        stats.totalOutputTokens += msg.usage.output || 0
+        stats.totalTokens += msg.usage.total || 0
+      }
+      for (const ci of (msg.content || [])) {
+        if (ci.type === 'thinking') stats.totalThinkingCount++
+        if (ci.type === 'toolCall') {
+          stats.totalToolCallCount++
+          const result = msg.toolResults && msg.toolResults[ci.id]
+          if (result) {
+            if (result.isError) stats.totalToolErrorCount++
+            else stats.totalToolSuccessCount++
+          }
+        }
       }
     }
-    if (msg.stopReason === 'thinking') stats.totalThinkingCount++
-    if (msg.stopReason === 'toolUse') { stats.totalToolCallCount++; if (msg.isError) stats.totalToolErrorCount++; else if (msg.hasResult) stats.totalToolSuccessCount++ }
   }
   return stats
 }
