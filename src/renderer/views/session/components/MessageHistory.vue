@@ -440,7 +440,7 @@ function onScroll(e) {
 .message-item.assistant .message-text {
   background: #FFFFFF;
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 12px 0;
   font-size: var(--font-size-body-1);
   line-height: 1.7;
   color: var(--color-text-1);
@@ -986,9 +986,8 @@ function onScroll(e) {
 /* === 新版内联思考 + 工具调用样式 === */
 
 .reasoning-inline {
-  margin: 4px 0;
+  margin: 2px 0;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.025);
   overflow: hidden;
 }
 
@@ -996,15 +995,15 @@ function onScroll(e) {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
+  padding: 3px 6px;
   cursor: pointer;
   user-select: none;
   font-size: 12px;
-  color: var(--color-text-3);
+  color: #61666b;
   transition: color 0.15s;
 }
 .reasoning-toggle:hover {
-  color: rgb(var(--primary-6));
+  color: #3c4043;
 }
 
 .reasoning-label {
@@ -1013,14 +1012,15 @@ function onScroll(e) {
 
 .reasoning-chevron {
   font-size: 9px;
-  color: var(--color-text-4);
+  color: #9aa0a6;
 }
 
 .reasoning-body {
-  padding: 6px 10px 8px 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 4px 8px 6px 8px;
+  border-left: 2px solid #e8eaed;
+  margin-left: 8px;
 }
-.reasoning-body :deep(p) { margin: 0 0 4px 0; font-size: 13px; color: var(--color-text-2); line-height: 1.55; }
+.reasoning-body :deep(p) { margin: 0 0 4px 0; font-size: 13px; color: #61666b; line-height: 1.55; }
 .reasoning-body :deep(code) { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
 .reasoning-body :deep(pre) { background: #1e1e1e; color: #d4d4d4; padding: 8px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 200px; }
 .reasoning-body :deep(pre code) { background: transparent; padding: 0; }
@@ -1029,47 +1029,52 @@ function onScroll(e) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  margin: 2px 0;
-  border-radius: 8px;
-  background: #F7F8FA;
-  border: 1px solid var(--color-border-2, #e5e6e8);
+  padding: 4px 6px;
+  margin: 1px 0;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s;
   font-size: 13px;
 }
 .tool-inline-card:hover {
-  background: #EEF0F4;
-  border-color: rgb(var(--primary-6));
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .tool-inline-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.tool-inline-dot.dot-loading { background: rgb(var(--warning-6)); }
-.tool-inline-dot.dot-success { background: rgb(var(--success-6)); }
-.tool-inline-dot.dot-error   { background: rgb(var(--danger-6)); }
+.tool-inline-dot.dot-loading { background: #f7ba1e; }
+.tool-inline-dot.dot-success { background: #00b42a; }
+.tool-inline-dot.dot-error   { background: #f53f3f; }
 
 .tool-inline-icon {
-  font-size: 15px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
 .tool-inline-name {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-2);
   flex-shrink: 0;
 }
 
 .tool-inline-desc {
-  color: var(--color-text-3);
+  color: #61666b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
   font-size: 12px;
+}
+
+.tool-inline-card::after {
+  content: '>';
+  font-size: 11px;
+  color: #9aa0a6;
+  flex-shrink: 0;
+  font-weight: 600;
 }
 </style>

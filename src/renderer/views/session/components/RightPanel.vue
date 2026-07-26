@@ -69,6 +69,7 @@ const getTaskAgentName = A.getTaskAgentName
   flex-shrink: 0;
   overflow: visible;
   position: relative;
+  background-color: #FFF;
 }
 
 .right-panel-toggle {

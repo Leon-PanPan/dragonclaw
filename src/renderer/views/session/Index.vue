@@ -355,13 +355,12 @@ const handleWsMessage = (data) => {
         currentThinkingToolName = ''
         currentThinkingToolCallId = ''
 
+        // 关闭前面未完成的思考
         for (let i = messages.value.length - 1; i >= 0; i--) {
           const m = messages.value[i]
-          if (m.stopReason === 'thinking' && !m.thinkingDone) {
-            m.isCollapsed = true
+          if (m.role === 'assistant' && m.thinkingDone === false) {
             m.thinkingDone = true
-            const st = m._startTime || Date.now()
-            m.thinkingDuration = Math.max(1, Math.round((Date.now() - st) / 1000))
+            m.thinkingDuration = Math.max(1, Math.round((Date.now() - (m._startTime || Date.now())) / 1000))
             break
           }
         }
@@ -371,19 +370,20 @@ const handleWsMessage = (data) => {
           tokenInput: 0, tokenOutput: 0, tokenTotal: 0,
         }
 
-        currentThinkingMsgId.value = `thinking_${Date.now()}`
-        const thinkingMsg = {
+        // 创建流式 assistant 消息（content 数组格式，与历史一致）
+        currentThinkingMsgId.value = `streaming_${Date.now()}`
+        const streamingMsg = {
           id: currentThinkingMsgId.value,
           role: 'assistant',
-          stopReason: 'thinking',
-          thinkingBuffer: '',
-          isCollapsed: false,
+          content: [],
+          stopReason: null,
+          toolResults: {},
           thinkingDone: false,
           thinkingDuration: 0,
           _startTime: Date.now(),
           time: getTimeString(),
         }
-        messages.value.push(thinkingMsg)
+        messages.value.push(streamingMsg)
       } else if (phase === 'end') {
         const usage = data.payload?.data?.usage || {}
         currentRunStats.value.tokenInput = usage.input || 0
@@ -415,7 +415,6 @@ const handleWsMessage = (data) => {
         if (currentThinkingMsgId.value) {
           const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
-            messages.value[idx].isCollapsed = true
             messages.value[idx].thinkingDone = true
             const startTime = messages.value[idx]._startTime || Date.now()
             messages.value[idx].thinkingDuration = Math.max(1, Math.round((Date.now() - startTime) / 1000))
@@ -474,13 +473,14 @@ const handleWsMessage = (data) => {
         currentRunStats.value.thinkingCount++
 
         if (currentThinkingMsgId.value) {
-          let idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
-            messages.value[idx].thinkingBuffer += delta
-          } else {
-            idx = pendingMessages.value.findIndex(m => m.id === currentThinkingMsgId.value)
-            if (idx >= 0) {
-              pendingMessages.value[idx].thinkingBuffer += delta
+            const msg = messages.value[idx]
+            const last = msg.content[msg.content.length - 1]
+            if (last && last.type === 'thinking') {
+              last.thinking += delta
+            } else {
+              msg.content.push({ type: 'thinking', thinking: delta })
             }
           }
         }
@@ -502,35 +502,19 @@ const handleWsMessage = (data) => {
         currentThinkingToolName = toolName
         currentThinkingToolCallId = toolCallId
         const savedThinking = currentThinkingBuffer.trim()
-        const summary = `调用 ${toolName}`
         currentThinkingBuffer = ''
         currentRunStats.value.toolCallCount++
 
-        const existingEntry = messages.value.find(
-          m => m.role === 'assistant' && m.stopReason === 'toolUse' && m.toolCallId === toolCallId
-        )
-
-        if (existingEntry) {
-          existingEntry.toolName = toolName
-          existingEntry.args = args
-          existingEntry.thinkingSummary = summary
-          existingEntry.thinkingText = savedThinking || existingEntry.thinkingText
-          existingEntry.runId = msgRunId
-        } else {
-          pushMessage({
-            id: `toolcall_${toolCallId}_${Date.now()}`,
-            role: 'assistant',
-            stopReason: 'toolUse',
-            toolCallId: toolCallId,
-            runId: msgRunId,
-            toolName: toolName,
-            args: args,
-            thinkingSummary: summary,
-            thinkingText: savedThinking || null,
-            hasResult: false,
-            isError: false,
-            time: getTimeString(),
-          })
+        // 添加到流式消息的 content 数组
+        if (currentThinkingMsgId.value) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) {
+            const msg = messages.value[idx]
+            if (savedThinking) {
+              msg.content.push({ type: 'thinking', thinking: savedThinking })
+            }
+            msg.content.push({ type: 'toolCall', id: toolCallId, name: toolName, arguments: args })
+          }
         }
 
         nextTick(() => scrollToBottom())
@@ -555,31 +539,16 @@ const handleWsMessage = (data) => {
         const resultData = data.payload?.data?.result || data.result
         const resultStr = typeof resultData === 'string' ? resultData : JSON.stringify(resultData)
 
-        const toolCallEntry = messages.value.find(
-          m => m.role === 'assistant' && m.stopReason === 'toolUse' && m.toolCallId === toolCallId
-        )
-
-        if (toolCallEntry) {
-          toolCallEntry.isError = isError
-          toolCallEntry.result = resultStr
-          toolCallEntry.resultContent = resultStr
-          toolCallEntry.thinkingSummary = isError ? `${toolName} 执行失败` : `${toolName} 执行成功`
-          toolCallEntry.hasResult = true
-          const entryIdx = messages.value.findIndex(m => m.toolCallId === toolCallId)
-          if (entryIdx >= 0) {
-            messages.value[entryIdx] = { ...toolCallEntry }
+        // 更新流式消息的 toolResults
+        if (currentThinkingMsgId.value) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) {
+            messages.value[idx].toolResults[toolCallId] = {
+              isError,
+              content: resultStr,
+              toolName
+            }
           }
-        } else {
-          pushMessage({
-            id: `toolresult_${toolCallId}_${Date.now()}`,
-            role: 'toolResult',
-            toolCallId: toolCallId,
-            runId: msgRunId,
-            toolName: toolName,
-            result: resultStr,
-            isError: isError,
-            time: getTimeString(),
-          })
         }
 
         nextTick(() => scrollToBottom())
@@ -628,34 +597,32 @@ const handleWsMessage = (data) => {
         isStreaming.value = false
 
         const message = payload.message
-        if (message && message.content && message.content.length > 0) {
-          const stopReason = message.stopReason || 'stop'
-
-          if (stopReason === 'stop') {
-            const finalMessage = {
-              id: `final_${Date.now()}`,
-              role: 'assistant',
-              content: message.content,
-              stopReason: 'stop',
-              time: formatMessageTime(Date.now()),
+        // 将流式累积的消息更新为最终状态
+        if (currentThinkingMsgId.value) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) {
+            const streamingMsg = messages.value[idx]
+            streamingMsg.stopReason = message?.stopReason || 'stop'
+            streamingMsg.usage = message?.usage || streamingMsg.usage
+            streamingMsg.thinkingDone = true
+            if (message && message.content && message.content.length > 0) {
+              // 合并服务器返回的最终 content（优先保留流式累积的 toolCall + thinking）
+              streamingMsg.content = message.content
+            } else if (streamingResponse.value) {
+              streamingMsg.content.push({ type: 'text', text: streamingResponse.value })
             }
-            pushMessage(finalMessage)
-
-            const session = sessions.value.find(s => s.id === currentSessionId.value)
-            if (session) session.lastAgentTime = finalMessage.time
           }
-        } else if (streamingResponse.value) {
-          const finalMessage = {
+          currentThinkingMsgId.value = null
+        } else if (message && message.content && message.content.length > 0) {
+          pushMessage({
             id: `final_${Date.now()}`,
             role: 'assistant',
-            content: streamingResponse.value,
-            stopReason: 'stop',
+            content: message.content,
+            stopReason: message.stopReason || 'stop',
+            toolResults: {},
+            thinkingDone: true,
             time: formatMessageTime(Date.now()),
-          }
-          pushMessage(finalMessage)
-
-          const session = sessions.value.find(s => s.id === currentSessionId.value)
-          if (session) session.lastAgentTime = finalMessage.time
+          })
         }
 
         streamingResponse.value = ''
@@ -784,7 +751,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: row;
   min-height: 0;
-  background-color: #F7F8FA;
+  background-color: #FFF;
   min-width: 0;
 }
 
