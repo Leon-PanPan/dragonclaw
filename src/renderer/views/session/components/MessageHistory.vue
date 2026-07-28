@@ -573,22 +573,6 @@ function onScroll(e) {
   overflow-x: hidden;
 }
 
-.streaming-text::after {
-  content: '';
-  display: inline-block;
-  width: 2px;
-  height: 1.1em;
-  margin-left: 1px;
-  vertical-align: text-bottom;
-  background: var(--color-text-1);
-  animation: typewriter-blink 0.8s infinite;
-}
-
-@keyframes typewriter-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
 .streaming-text-error {
   background: #FFF0F0;
   border: 1px solid #FFCCC7;

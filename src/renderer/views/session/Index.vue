@@ -435,10 +435,18 @@ const handleWsMessage = (data) => {
         if (currentThinkingMsgId.value) {
           const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
-            messages.value[idx].isCollapsed = true
-            messages.value[idx].thinkingDone = true
-            const st = messages.value[idx]._startTime || Date.now()
-            messages.value[idx].thinkingDuration = Math.max(1, Math.round((Date.now() - st) / 1000))
+            const msg = messages.value[idx]
+            msg.stopReason = 'error'
+            msg.thinkingDone = true
+            const st = msg._startTime || Date.now()
+            msg.thinkingDuration = Math.max(1, Math.round((Date.now() - st) / 1000))
+            if (currentThinkingBuffer.trim()) {
+              msg.content.push({ type: 'text', text: currentThinkingBuffer.trim() })
+              currentThinkingBuffer = ''
+            }
+            if (!msg.content.some(c => c.type === 'text')) {
+              msg.content.push({ type: 'text', text: errMsg })
+            }
           }
           currentThinkingMsgId.value = null
         }
@@ -510,6 +518,20 @@ const handleWsMessage = (data) => {
       } else if (phase === 'update') {
         nextTick(() => scrollToBottom())
       } else if (phase === 'end') {
+        const summary = data.payload?.data?.summary
+        const endedAt = data.payload?.data?.endedAt
+
+        if (currentThinkingMsgId.value && toolCallId) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) {
+            const existing = messages.value[idx].toolResults[toolCallId]
+            if (existing) {
+              if (summary && !existing.content) existing.content = summary
+              if (endedAt) existing.endedAt = endedAt
+            }
+          }
+        }
+
         nextTick(() => scrollToBottom())
       }
       return
@@ -522,7 +544,7 @@ const handleWsMessage = (data) => {
       const msgRunId = runId
 
       if (phase === 'result') {
-        const isError = data.isError === true
+        const isError = data.payload?.data?.isError === true
         if (isError) currentRunStats.value.toolErrorCount++
         else currentRunStats.value.toolSuccessCount++
         const resultData = data.payload?.data?.result || data.result
