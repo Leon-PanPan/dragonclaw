@@ -37,14 +37,8 @@
         <div v-for="item in group.items" :key="item.id" class="message-item assistant">
           <div class="message-content">
             <template v-for="(ci, cj) in item.content" :key="item.id + '_' + cj">
-              <!-- 思考：可折叠的灰色文本 -->
-              <div v-if="ci.type === 'thinking'" class="reasoning-inline">
-                <div class="reasoning-toggle" @click="toggleItemExpand(item.id + '_t_' + cj)">
-                  <span class="reasoning-label">💭 思考{{ isItemExpanded(item.id + '_t_' + cj) ? '' : '...' }}</span>
-                  <span class="reasoning-chevron">{{ isItemExpanded(item.id + '_t_' + cj) ? '▼' : '▶' }}</span>
-                </div>
-                <div v-if="isItemExpanded(item.id + '_t_' + cj)" class="reasoning-body" v-html="renderThinkingContent(ci.thinking)"></div>
-              </div>
+              <!-- 思考：与正文相同渲染，仅颜色区分 -->
+              <div v-if="ci.type === 'thinking'" class="message-text thinking-content markdown-content" v-html="renderThinkingContent(ci.thinking)" @click="handleMessageClick"></div>
               <!-- 工具调用：简洁卡片 -->
               <div
                 v-else-if="ci.type === 'toolCall'"
@@ -55,6 +49,7 @@
                 <span class="tool-inline-icon">{{ getToolIcon(ci.name) }}</span>
                 <span class="tool-inline-name">{{ getToolNameCN(ci.name) }}</span>
                 <span class="tool-inline-desc">{{ getContentToolDesc(item, ci) }}</span>
+                <icon-right class="tool-inline-arrow" />
               </div>
               <!-- 文本正文 -->
               <div
@@ -87,7 +82,10 @@
                 <span class="thinking-inline-status">{{ currentAgentName || '助手' }} · 思考中...</span>
               </div>
             </div>
-            <div v-if="streamingResponse" :class="['message-text', isStreamingError ? 'streaming-text-error' : 'streaming-text', 'markdown-content']" v-html="throttledStreamingHtml"></div>
+            <div v-if="streamingResponse && !isStreamingError" class="message-text streaming-text markdown-content" v-html="throttledStreamingHtml"></div>
+            <div v-if="streamingResponse && isStreamingError" class="message-text streaming-text-error">
+              {{ streamingResponse }}
+            </div>
             <div v-if="!streamingResponse && !latestThinkingMsg" class="message-text thinking-text">
               <a-spin size="small" /><span>正在思考中，请稍候...</span>
             </div>
@@ -99,7 +97,7 @@
 </template>
 
 <script setup>
-import { computed, inject, nextTick, reactive, ref, watch } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
   // 历史消息
@@ -243,10 +241,6 @@ function renderTextContent(text) {
   if (!text) return ''
   try { return parseMessageContent(text).html || text } catch { return text }
 }
-
-const itemExpandState = reactive({})
-function isItemExpanded(key) { return !!itemExpandState[key] }
-function toggleItemExpand(key) { itemExpandState[key] = !itemExpandState[key] }
 
 function onContentTimelineClick(item, ci) {
   const result = item.toolResults && item.toolResults[ci.id]
@@ -404,6 +398,8 @@ function onScroll(e) {
 .message-content {
   width: fit-content;
   max-width: 80%;
+  min-width: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -432,9 +428,11 @@ function onScroll(e) {
 }
 
 .message-text {
-  word-break: normal;
-  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   width: fit-content;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .message-item.assistant .message-text {
@@ -562,7 +560,7 @@ function onScroll(e) {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* 流式输出 */
+/* 流式输出 — typewriter 效果 */
 .streaming-text {
   background: #FFFFFF;
   border-radius: 8px;
@@ -571,7 +569,24 @@ function onScroll(e) {
   line-height: 1.7;
   color: var(--color-text-1);
   word-break: break-word;
-  animation: fadeInUp 0.3s ease;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+}
+
+.streaming-text::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--color-text-1);
+  animation: typewriter-blink 0.8s infinite;
+}
+
+@keyframes typewriter-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .streaming-text-error {
@@ -583,29 +598,8 @@ function onScroll(e) {
   line-height: 1.7;
   color: #f53f3f;
   word-break: break-word;
-  animation: fadeInUp 0.3s ease;
-}
-
-.streaming-text :deep(pre) {
-  background-color: #1e1e1e !important;
-  color: #d4d4d4 !important;
-  padding: 10px;
-  border-radius: 6px;
-  overflow-x: auto;
-  margin: 6px 0;
-  font-size: var(--font-size-body-3);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  max-height: 200px;
-}
-
-.streaming-text :deep(code) {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.streaming-text :deep(pre code) {
-  background-color: transparent !important;
-  padding: 0;
-  font-size: var(--font-size-body-3);
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
 }
 
 .streaming-indicator {
@@ -985,45 +979,9 @@ function onScroll(e) {
 
 /* === 新版内联思考 + 工具调用样式 === */
 
-.reasoning-inline {
-  margin: 2px 0;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.reasoning-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 12px;
+.thinking-content {
   color: #61666b;
-  transition: color 0.15s;
 }
-.reasoning-toggle:hover {
-  color: #3c4043;
-}
-
-.reasoning-label {
-  font-weight: 500;
-}
-
-.reasoning-chevron {
-  font-size: 9px;
-  color: #9aa0a6;
-}
-
-.reasoning-body {
-  padding: 4px 8px 6px 8px;
-  border-left: 2px solid #e8eaed;
-  margin-left: 8px;
-}
-.reasoning-body :deep(p) { margin: 0 0 4px 0; font-size: 13px; color: #61666b; line-height: 1.55; }
-.reasoning-body :deep(code) { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
-.reasoning-body :deep(pre) { background: #1e1e1e; color: #d4d4d4; padding: 8px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 200px; }
-.reasoning-body :deep(pre code) { background: transparent; padding: 0; }
 
 .tool-inline-card {
   display: flex;
@@ -1053,11 +1011,12 @@ function onScroll(e) {
 .tool-inline-icon {
   font-size: 14px;
   flex-shrink: 0;
+  color: #61666b;
 }
 
 .tool-inline-name {
   font-weight: 500;
-  color: var(--color-text-2);
+  color: var(--color-text-1);
   flex-shrink: 0;
 }
 
@@ -1070,11 +1029,9 @@ function onScroll(e) {
   font-size: 12px;
 }
 
-.tool-inline-card::after {
-  content: '>';
+.tool-inline-arrow {
   font-size: 11px;
-  color: #9aa0a6;
+  color: #61666b;
   flex-shrink: 0;
-  font-weight: 600;
 }
 </style>

@@ -419,7 +419,6 @@ const handleWsMessage = (data) => {
             const startTime = messages.value[idx]._startTime || Date.now()
             messages.value[idx].thinkingDuration = Math.max(1, Math.round((Date.now() - startTime) / 1000))
           }
-          currentThinkingMsgId.value = null
         }
 
         isThinking.value = false
@@ -472,19 +471,6 @@ const handleWsMessage = (data) => {
         currentThinkingBuffer += delta
         currentRunStats.value.thinkingCount++
 
-        if (currentThinkingMsgId.value) {
-          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
-          if (idx >= 0) {
-            const msg = messages.value[idx]
-            const last = msg.content[msg.content.length - 1]
-            if (last && last.type === 'thinking') {
-              last.thinking += delta
-            } else {
-              msg.content.push({ type: 'thinking', thinking: delta })
-            }
-          }
-        }
-
         nextTick(() => scrollToBottom())
       }
       return
@@ -492,11 +478,15 @@ const handleWsMessage = (data) => {
 
     if (eventType === 'agent' && stream === 'item') {
       const phase = data.payload?.data?.phase
+      const kind = data.payload?.data?.kind
+      const itemId = data.payload?.data?.itemId || ''
       const toolName = data.payload?.data?.name || 'unknown'
       const toolCallId = data.payload?.data?.toolCallId
       const args = data.payload?.data?.meta
       const title = data.payload?.data?.title
       const msgRunId = runId
+
+      if (itemId && itemId.startsWith('command:')) return
 
       if (phase === 'start') {
         currentThinkingToolName = toolName
@@ -505,13 +495,12 @@ const handleWsMessage = (data) => {
         currentThinkingBuffer = ''
         currentRunStats.value.toolCallCount++
 
-        // 添加到流式消息的 content 数组
         if (currentThinkingMsgId.value) {
           const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
             const msg = messages.value[idx]
             if (savedThinking) {
-              msg.content.push({ type: 'thinking', thinking: savedThinking })
+              msg.content.push({ type: 'text', text: savedThinking })
             }
             msg.content.push({ type: 'toolCall', id: toolCallId, name: toolName, arguments: args })
           }
@@ -606,8 +595,10 @@ const handleWsMessage = (data) => {
             streamingMsg.usage = message?.usage || streamingMsg.usage
             streamingMsg.thinkingDone = true
             if (message && message.content && message.content.length > 0) {
-              // 合并服务器返回的最终 content（优先保留流式累积的 toolCall + thinking）
-              streamingMsg.content = message.content
+              if (currentThinkingBuffer.trim()) {
+                streamingMsg.content.push({ type: 'text', text: currentThinkingBuffer.trim() })
+                currentThinkingBuffer = ''
+              }
             } else if (streamingResponse.value) {
               streamingMsg.content.push({ type: 'text', text: streamingResponse.value })
             }

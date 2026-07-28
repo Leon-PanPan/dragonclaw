@@ -235,21 +235,24 @@ export const sessionHasMessages = computed(() => messages.value.length > 0)
 
 export const wsConnected = computed(() => wsManager?.state?.value === ConnectionState.CONNECTED)
 
-// 节流流式 Markdown 解析（每 80ms 最多解析一次，减少高频重渲染）
 export const throttledStreamingHtml = ref('')
 let _throttleTimer = null
+let _throttlePending = false
 watch(streamingResponse, (val) => {
   if (!val) {
     throttledStreamingHtml.value = ''
     if (_throttleTimer) { clearTimeout(_throttleTimer); _throttleTimer = null }
+    _throttlePending = false
     return
   }
-  if (_throttleTimer) return
+  if (_throttlePending) return
+  _throttlePending = true
   _throttleTimer = setTimeout(() => {
     const parsed = parseMessageContent(val)
     throttledStreamingHtml.value = parsed.html || ''
     _throttleTimer = null
-  }, 80)
+    _throttlePending = false
+  }, 30)
 }, { immediate: true })
 
 export const parsedStreamingContent = computed(() => parseMessageContent(streamingResponse.value))

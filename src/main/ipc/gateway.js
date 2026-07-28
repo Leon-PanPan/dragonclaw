@@ -770,6 +770,20 @@ ipcMain.handle(CH.TEST_FEISHU_CONNECTION, async (event, feishuConfig) => {
 // ==================== WebSocket 代理 ====================
 // 绕过 Chromium Private Network Access 限制：主进程用 Node.js WebSocket 连接远程网关，
 // 渲染进程连接本地代理端口 127.0.0.1，主进程透明转发。
+
+// Valid WebSocket close codes per RFC 6455 §7.4.1.
+// Codes 1004, 1005, 1006, 1015 are reserved and must NOT be set as a close frame.
+// The ws library enforces this in Sender.close() — using them throws TypeError.
+// When the peer disconnects abnormally, the ws 'close' event fires with code 1006;
+// propagating that to the other WebSocket would crash the process. Normalize here.
+function toCloseCode(code) {
+  if (typeof code !== 'number') return 1000;
+  if (code === 1004 || code === 1005 || code === 1006 || code === 1015) return 1000;
+  if (code >= 1000 && code <= 1014) return code;
+  if (code >= 3000 && code <= 4999) return code;
+  return 1000;
+}
+
 let wsProxyServer = null;
 let wsProxyRemote = null;
 
@@ -807,11 +821,11 @@ ipcMain.handle(CH.START_WS_PROXY, async (event, { host, port, token, origin }) =
 
           wsProxyRemote.on('open', () => { console.log('[ws-proxy] 远程网关已连接'); });
           wsProxyRemote.on('message', (data) => { if (clientWs.readyState === 1) clientWs.send(data.toString()); });
-          wsProxyRemote.on('close', (code, reason) => { if (clientWs.readyState === 1) clientWs.close((typeof code === 'number' && code >= 1000 && code <= 4999) ? code : 1000, reason?.toString()); });
+          wsProxyRemote.on('close', (code, reason) => { if (clientWs.readyState === 1) clientWs.close(toCloseCode(code), reason?.toString()); });
           wsProxyRemote.on('error', (err) => { console.error(`[ws-proxy] 远程错误: ${err.message}`); if (clientWs.readyState === 1) clientWs.close(1011, err.message); });
 
           clientWs.on('message', (data) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.send(data.toString()); });
-          clientWs.on('close', (code, reason) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.close((typeof code === 'number' && code >= 1000 && code <= 4999) ? code : 1000, reason?.toString()); });
+          clientWs.on('close', (code, reason) => { if (wsProxyRemote?.readyState === 1) wsProxyRemote.close(toCloseCode(code), reason?.toString()); });
           clientWs.on('error', (err) => { console.error(`[ws-proxy] 客户端错误: ${err.message}`); });
         });
 
