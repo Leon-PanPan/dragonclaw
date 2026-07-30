@@ -58,6 +58,12 @@
                 v-html="renderTextContent(ci.text)"
                 @click="handleMessageClick"
               ></div>
+              <!-- 错误信息 -->
+              <div
+                v-else-if="ci.type === 'error' && ci.text"
+                class="message-text streaming-text-error"
+                v-html="renderErrorContent(ci.text)"
+              ></div>
             </template>
             <!-- usage stats -->
             <div v-if="item.usage && item.usage.total" class="message-stats-row">
@@ -71,22 +77,45 @@
       </div>
     </template>
 
-    <!-- 实时回复区域：使用 content 数组格式 -->
-    <div v-if="isStreaming || isThinking" class="assistant-group streaming-block">
-      <template v-if="latestThinkingMsg || streamingToolItems.length > 0 || streamingResponse">
+    <!-- 实时回复区域：按 content 数组顺序穿插显示 -->
+    <div v-if="isStreaming || isThinking || isStreamingError" class="assistant-group streaming-block">
+      <template v-if="streamingContentItems.length > 0 || streamingLiveText || latestThinkingMsg">
         <div class="message-item assistant">
           <div class="message-content">
-            <div v-if="latestThinkingMsg" class="thinking-inline">
+            <div v-if="latestThinkingMsg && !streamingContentItems.length && !streamingLiveText" class="thinking-inline">
               <div class="thinking-inline-header">
                 <icon-command style="font-size:12px;color:var(--color-text-3);flex-shrink:0;" />
                 <span class="thinking-inline-status">{{ currentAgentName || '助手' }} · 思考中...</span>
               </div>
             </div>
-            <div v-if="streamingResponse && !isStreamingError" class="message-text streaming-text markdown-content" v-html="throttledStreamingHtml"></div>
-            <div v-if="streamingResponse && isStreamingError" class="message-text streaming-text-error">
-              {{ streamingResponse }}
+            <template v-for="(ci, ciIdx) in streamingContentItems" :key="'si_' + ciIdx">
+              <!-- 思考：灰色显示 -->
+              <div v-if="ci.type === 'thinking' && ci.thinking" class="message-text thinking-content markdown-content" v-html="renderThinkingContent(ci.thinking)"></div>
+              <!-- 工具调用：卡片 -->
+              <div
+                v-else-if="ci.type === 'toolCall'"
+                class="tool-inline-card"
+                @click.stop="onContentToolClick(ci)"
+              >
+                <span :class="['tool-inline-dot', getCiDotClass(ci)]"></span>
+                <span class="tool-inline-icon">{{ getToolIcon(ci.name) }}</span>
+                <span class="tool-inline-name">{{ getToolNameCN(ci.name) }}</span>
+                <span class="tool-inline-desc">{{ getContentToolDesc(streamingMsgRef, ci) }}</span>
+                <icon-right class="tool-inline-arrow" />
+              </div>
+              <!-- 已保存的文本正文 -->
+              <div
+                v-else-if="ci.type === 'text' && ci.text"
+                class="message-text markdown-content"
+                v-html="renderTextContent(ci.text)"
+              ></div>
+            </template>
+            <!-- 实时流式追加文本（typewriter） -->
+            <div v-if="streamingLiveText && !isStreamingError" class="message-text streaming-text markdown-content" v-html="pacedStreamingHtml"></div>
+            <div v-if="isStreamingError" class="message-text streaming-text-error">
+              {{ streamingLiveText || streamingResponse }}
             </div>
-            <div v-if="!streamingResponse && !latestThinkingMsg" class="message-text thinking-text">
+            <div v-if="!streamingLiveText && !streamingContentItems.length" class="message-text thinking-text">
               <a-spin size="small" /><span>正在思考中，请稍候...</span>
             </div>
           </div>
@@ -98,6 +127,7 @@
 
 <script setup>
 import { computed, inject, nextTick, ref, watch } from 'vue'
+import { useTypewriter } from '@/utils/typewriter'
 
 const props = defineProps({
   // 历史消息
@@ -117,8 +147,11 @@ const props = defineProps({
   latestThinkingMsg: { type: Object, default: null },
   streamingToolItems: { type: Array, default: () => [] },
   streamingThinkingCount: { type: Number, default: 0 },
+  streamingContentItems: { type: Array, default: () => [] },
+  streamingLiveText: { type: String, default: '' },
   showStreamingThinking: { type: Boolean, default: true },
   showStreamingTools: { type: Boolean, default: false },
+  isAtBottom: { type: Boolean, default: true },
 })
 
 const emit = defineEmits([
@@ -153,9 +186,41 @@ const scrollToBottomInternal = () => {
 }
 
 watch(
-  () => [props.messages.length, props.streamingResponse, props.isThinking, props.streamingToolItems.length],
-  () => { scrollToBottomInternal() }
+  () => [
+    props.messages.length,
+    props.streamingResponse,
+    props.streamingContentItems.length,
+    props.streamingToolItems.length,
+    props.isThinking,
+    props.isStreaming,
+    props.latestThinkingMsg
+  ],
+  () => {
+    if (props.isAtBottom) {
+      scrollToBottomInternal()
+    }
+  }
 )
+
+const streamingMsgRef = computed(() => props.latestThinkingMsg)
+
+const typewriterSource = computed(() => props.streamingLiveText)
+const { displayText: pacedText } = useTypewriter(typewriterSource, () => props.isStreaming)
+
+const pacedStreamingHtml = ref('')
+let _pacedTimer = null
+let _pacedPending = false
+watch(pacedText, (val) => {
+  if (!val) { pacedStreamingHtml.value = ''; return }
+  if (_pacedPending) return
+  _pacedPending = true
+  _pacedTimer = setTimeout(() => {
+    const parsed = parseMessageContent(val)
+    pacedStreamingHtml.value = parsed.html || ''
+    _pacedTimer = null
+    _pacedPending = false
+  }, 30)
+}, { immediate: true })
 
 const A = inject('sessionActions')
 const {
@@ -225,11 +290,49 @@ function getContentToolDesc(item, ci) {
     else desc = JSON.stringify(args).substring(0, 60)
     if (desc.length > 50) desc = desc.substring(0, 50) + '...'
   } catch {}
-  if (!desc) {
-    const result = item.toolResults && item.toolResults[ci.id]
-    desc = result ? (result.isError ? '执行失败' : '执行成功') : '执行中...'
-  }
   return desc
+}
+
+function getStreamToolStatus(tool) {
+  if (!tool.hasResult) return 'dot-loading'
+  if (tool.isError) return 'dot-error'
+  return 'dot-success'
+}
+
+function getCiDotClass(ci) {
+  const msg = props.latestThinkingMsg
+  const result = msg && msg.toolResults && msg.toolResults[ci.id]
+  if (!result) return 'dot-loading'
+  if (result.isError) return 'dot-error'
+  return 'dot-success'
+}
+
+function onContentToolClick(ci) {
+  const msg = props.latestThinkingMsg
+  const result = msg && msg.toolResults && msg.toolResults[ci.id]
+  const toolMsg = {
+    toolName: ci.name,
+    toolCallId: ci.id,
+    args: ci.arguments,
+    thinkingText: '',
+    isError: result?.isError || false,
+    hasResult: !!result,
+    result: result?.content || '',
+    resultContent: result?.content || '',
+    time: msg?.time,
+  }
+  if (msg && Array.isArray(msg.content)) {
+    const idx = msg.content.indexOf(ci)
+    for (let i = idx - 1; i >= 0; i--) {
+      const prev = msg.content[i]
+      if (prev && prev.type === 'thinking') {
+        toolMsg.thinkingText = prev.thinking
+        break
+      }
+    }
+  }
+  emit('timeline-click', toolMsg)
+  if (handleTimelineClick) handleTimelineClick(toolMsg)
 }
 
 function renderThinkingContent(text) {
@@ -240,6 +343,11 @@ function renderThinkingContent(text) {
 function renderTextContent(text) {
   if (!text) return ''
   try { return parseMessageContent(text).html || text } catch { return text }
+}
+
+function renderErrorContent(text) {
+  if (!text) return ''
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function onContentTimelineClick(item, ci) {
@@ -511,7 +619,6 @@ function onScroll(e) {
   padding: 6px 12px;
   border-left: 3px solid var(--border-color);
   background-color: rgba(0, 0, 0, 0.04);
-  border-radius: 0 4px 4px 0;
 }
 
 .markdown-content :deep(.md-table),
@@ -573,14 +680,14 @@ function onScroll(e) {
   overflow-x: hidden;
 }
 
-.streaming-text-error {
-  background: #FFF0F0;
-  border: 1px solid #FFCCC7;
-  border-radius: 8px;
-  padding: 12px 16px;
+.message-text.streaming-text-error {
+  margin: 6px 0;
+  padding: 6px 12px;
+  border-left: 3px solid #f53f3f;
+  background-color: rgba(245, 63, 63, 0.06);
   font-size: var(--font-size-body-1);
   line-height: 1.7;
-  color: #f53f3f;
+  color: #cf1322;
   word-break: break-word;
   overflow-wrap: anywhere;
   overflow-x: hidden;

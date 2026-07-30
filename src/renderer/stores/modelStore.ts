@@ -50,9 +50,33 @@ export const useModelStore = defineStore('model', () => {
     if (_loadPromise) return _loadPromise
     _loadPromise = (async () => {
       loading.value = true
+      let rawModels: { id: string; name?: string; provider?: string; contextWindow?: number }[] = []
       try {
         const r = await modelAdminApi.list()
-        const rawModels = r?.models || []
+        rawModels = r?.models || []
+      } catch (e) {
+        lastFailedAt.value = Date.now()
+        console.warn('[modelStore] 加载模型失败，将在下次调用时重试:', (e as Error).message)
+        loading.value = false
+        _loadPromise = null
+        return
+      }
+
+      // Phase 1: WS 响应即渲染（reasoning 待 catalog 补充）
+      models.value = rawModels.map(m => ({
+        id: m.id,
+        name: m.name || m.id,
+        provider: m.provider || 'default',
+        contextWindow: m.contextWindow,
+        reasoning: null,
+        reasoningOptions: null,
+      }))
+      lastFailedAt.value = 0
+      loading.value = false
+      _loadPromise = null
+
+      // Phase 2: 后台异步加载 catalog 补充 reasoning 字段
+      try {
         const catalog = await ensureCatalog()
         models.value = rawModels.map(m => {
           const reasoning = resolveReasoning(catalog, m.provider, m.id)
@@ -67,15 +91,8 @@ export const useModelStore = defineStore('model', () => {
             reasoningOptions,
           }
         })
-        // 成功：清除失败标记
-        lastFailedAt.value = 0
       } catch (e) {
-        // 失败：保留旧数据（如果有），标记失败以便下次重新拉
-        lastFailedAt.value = Date.now()
-        console.warn('[modelStore] 加载模型失败，将在下次调用时重试:', (e as Error).message)
-      } finally {
-        loading.value = false
-        _loadPromise = null
+        console.warn('[modelStore] catalog 加载失败，保持基础模型列表:', (e as Error).message)
       }
     })()
     return _loadPromise

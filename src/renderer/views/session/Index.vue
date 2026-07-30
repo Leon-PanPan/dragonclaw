@@ -54,8 +54,11 @@
           :latest-thinking-msg="latestThinkingMsg"
           :streaming-tool-items="streamingToolItems"
           :streaming-thinking-count="streamingThinkingCount"
+          :streaming-content-items="streamingContentItems"
+          :streaming-live-text="streamingLiveText"
           :show-streaming-thinking="showStreamingThinking"
           :show-streaming-tools="showStreamingTools"
+          :is-at-bottom="isAtBottom"
           @load-more="loadMoreHistory"
           @scroll="handleScroll"
           @timeline-click="handleTimelineClick"
@@ -67,7 +70,7 @@
           <div v-if="isAtBottom && messages.length > 0" class="scroll-btn" @click="scrollToTop" title="滚动到顶部">
             <icon-up />
           </div>
-          <div v-if="!isAtBottom && messages.length > 0" class="scroll-btn" @click="scrollToBottom" title="滚动到底部">
+          <div v-if="!isAtBottom && messages.length > 0" class="scroll-btn" @click="scrollToBottom(true)" title="滚动到底部">
             <icon-down />
           </div>
         </div>
@@ -158,7 +161,7 @@ const {
   toolExpandedMap, thinkingExpandedMap,
   currentAgentName, sessionHasMessages, currentSession, currentSessionModel, currentSessionModelName,
   groupedSessions, sortedSessions,
-  streamingToolItems, streamingThinkingCount, latestThinkingMsg, throttledStreamingHtml,
+  streamingToolItems, streamingThinkingCount, streamingContentItems, streamingLiveText, latestThinkingMsg, throttledStreamingHtml,
   selectedModelName, thinkingLevelOptions, showThinkingLevelSelect,
   workspaceLabel, workspaceIsSet, workspaceInstructionPending,
   wsConnected, groupedMessages,
@@ -205,6 +208,7 @@ function selectNewSessionAgent(agent) {
 }
 
 function switchSession(sessionId) {
+  currentThinkingBuffer = ''
   switchSessionFn(sessionId)
 }
 
@@ -220,6 +224,7 @@ let currentThinkingToolCallId = ''
 let previousRunId = null
 let _wsUnsubscribe = null
 let _modelChanging = false
+const toolArgsCache = new Map()
 
 const findAgentIdBySessionKey = (sessionKey) => {
   if (!sessionKey) return null
@@ -354,6 +359,9 @@ const handleWsMessage = (data) => {
         showStreamingThinking.value = true
         currentThinkingToolName = ''
         currentThinkingToolCallId = ''
+        isStreaming.value = true
+        isThinking.value = true
+        isStreamingError.value = false
 
         // 关闭前面未完成的思考
         for (let i = messages.value.length - 1; i >= 0; i--) {
@@ -421,6 +429,8 @@ const handleWsMessage = (data) => {
           }
         }
 
+        toolArgsCache.clear()
+
         isThinking.value = false
         isStreaming.value = false
         sending.value = false
@@ -435,20 +445,10 @@ const handleWsMessage = (data) => {
         if (currentThinkingMsgId.value) {
           const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
-            const msg = messages.value[idx]
-            msg.stopReason = 'error'
-            msg.thinkingDone = true
-            const st = msg._startTime || Date.now()
-            msg.thinkingDuration = Math.max(1, Math.round((Date.now() - st) / 1000))
-            if (currentThinkingBuffer.trim()) {
-              msg.content.push({ type: 'text', text: currentThinkingBuffer.trim() })
-              currentThinkingBuffer = ''
-            }
-            if (!msg.content.some(c => c.type === 'text')) {
-              msg.content.push({ type: 'text', text: errMsg })
-            }
+            messages.value[idx].thinkingDone = true
+            const st = messages.value[idx]._startTime || Date.now()
+            messages.value[idx].thinkingDuration = Math.max(1, Math.round((Date.now() - st) / 1000))
           }
-          currentThinkingMsgId.value = null
         }
 
         // 清理流式状态
@@ -457,12 +457,13 @@ const handleWsMessage = (data) => {
         isStreamingError.value = true
         streamingResponse.value = errMsg
         sending.value = false
+        toolArgsCache.clear()
 
         // 写入对话气泡
         pushMessage({
           id: `lifecycle_error_${Date.now()}`,
           role: 'assistant',
-          content: errMsg,
+          content: [{ type: 'error', text: errMsg }],
           stopReason: 'error',
           time: formatMessageTime(Date.now()),
         })
@@ -503,6 +504,11 @@ const handleWsMessage = (data) => {
         currentThinkingBuffer = ''
         currentRunStats.value.toolCallCount++
 
+        let finalArgs = args
+        if ((!finalArgs || (typeof finalArgs === 'object' && Object.keys(finalArgs).length === 0)) && toolCallId && toolArgsCache.has(toolCallId)) {
+          finalArgs = toolArgsCache.get(toolCallId)
+        }
+
         if (currentThinkingMsgId.value) {
           const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
           if (idx >= 0) {
@@ -510,7 +516,7 @@ const handleWsMessage = (data) => {
             if (savedThinking) {
               msg.content.push({ type: 'text', text: savedThinking })
             }
-            msg.content.push({ type: 'toolCall', id: toolCallId, name: toolName, arguments: args })
+            msg.content.push({ type: 'toolCall', id: toolCallId, name: toolName, arguments: finalArgs })
           }
         }
 
@@ -541,9 +547,26 @@ const handleWsMessage = (data) => {
       const phase = data.payload?.data?.phase
       const toolName = data.payload?.data?.name || 'unknown'
       const toolCallId = data.payload?.data?.toolCallId
+      const args = data.payload?.data?.args
       const msgRunId = runId
 
-      if (phase === 'result') {
+      if (phase === 'start') {
+        if (toolCallId && args) {
+          toolArgsCache.set(toolCallId, args)
+          const idx = currentThinkingMsgId.value
+            ? messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+            : -1
+          if (idx >= 0) {
+            const content = messages.value[idx].content
+            for (const ci of content) {
+              if (ci.type === 'toolCall' && ci.id === toolCallId) {
+                ci.arguments = args
+                break
+              }
+            }
+          }
+        }
+      } else if (phase === 'result') {
         const isError = data.payload?.data?.isError === true
         if (isError) currentRunStats.value.toolErrorCount++
         else currentRunStats.value.toolSuccessCount++
@@ -561,6 +584,8 @@ const handleWsMessage = (data) => {
             }
           }
         }
+
+        if (toolCallId) toolArgsCache.delete(toolCallId)
 
         nextTick(() => scrollToBottom())
       }
@@ -606,6 +631,7 @@ const handleWsMessage = (data) => {
       } else if (payload.state === 'final') {
         console.debug('聊天完成')
         isStreaming.value = false
+        isThinking.value = false
 
         const message = payload.message
         // 将流式累积的消息更新为最终状态
@@ -668,10 +694,15 @@ const handleWsMessage = (data) => {
         isThinking.value = false
         isStreamingError.value = true
         streamingResponse.value = '对话已中止'
+        if (currentThinkingMsgId.value) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) messages.value[idx].thinkingDone = true
+          currentThinkingMsgId.value = null
+        }
         pushMessage({
           id: `aborted_${Date.now()}`,
           role: 'assistant',
-          content: '对话已中止',
+          content: [{ type: 'error', text: '对话已中止' }],
           stopReason: 'error',
           time: formatMessageTime(Date.now()),
         })
@@ -684,10 +715,15 @@ const handleWsMessage = (data) => {
         isThinking.value = false
         isStreamingError.value = true
         streamingResponse.value = errMsg
+        if (currentThinkingMsgId.value) {
+          const idx = messages.value.findIndex(m => m.id === currentThinkingMsgId.value)
+          if (idx >= 0) messages.value[idx].thinkingDone = true
+          currentThinkingMsgId.value = null
+        }
         pushMessage({
           id: `error_${Date.now()}`,
           role: 'assistant',
-          content: errMsg,
+          content: [{ type: 'error', text: errMsg }],
           stopReason: 'error',
           time: formatMessageTime(Date.now()),
         })
@@ -706,9 +742,11 @@ const handleWsMessage = (data) => {
 
   if (data.type === 'res' && !data.ok) {
     console.error('WebSocket 请求失败:', data.error)
-    sending.value = false
-    isThinking.value = false
-    isStreaming.value = false
+    if (data.id && data.id.startsWith('chat_')) {
+      sending.value = false
+      isThinking.value = false
+      isStreaming.value = false
+    }
   }
 }
 

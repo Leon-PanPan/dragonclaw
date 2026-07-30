@@ -302,6 +302,27 @@ export const streamingThinkingCount = computed(() => {
   return streamingToolItems.value.filter(m => m.thinkingText).length
 })
 
+export const streamingContentItems = computed(() => {
+  if (!currentThinkingMsgId.value) return []
+  const msg = messages.value.find(m => m.id === currentThinkingMsgId.value)
+  return msg?.content || []
+})
+
+export const streamingLiveText = computed(() => {
+  const msg = messages.value.find(m => m.id === currentThinkingMsgId.value)
+  if (!msg || !streamingResponse.value) return ''
+  const items = msg.content || []
+  let lastTextItem = null
+  for (let i = items.length - 1; i >= 0; i--) {
+    if (items[i].type === 'text') { lastTextItem = items[i]; break }
+  }
+  const live = streamingResponse.value
+  if (!lastTextItem) return live
+  const saved = lastTextItem.text || ''
+  if (live.startsWith(saved)) return live.slice(saved.length)
+  return live
+})
+
 export const latestThinkingMsg = computed(() => {
   if (!currentThinkingMsgId.value) return null
   const current = messages.value.find(m => m.id === currentThinkingMsgId.value)
@@ -967,8 +988,10 @@ export const switchSessionFn = (sessionId) => {
   if (session.model) selectedModel.value = session.model
   else if (getModelStore().models.length > 0 && !selectedModel.value) selectedModel.value = getModelStore().models[0].id
   messages.value = []
-  nextTick(() => scrollToBottom())
+  nextTick(() => scrollToBottom(true))
   streamingResponse.value = ''; isThinking.value = false; isStreaming.value = false
+  isStreamingError.value = false
+  currentThinkingMsgId.value = null
   inputText.value = ''; hasMoreHistory.value = true; historyLimit.value = 50
   if (session.isNew) return
   if (session.id) loadSessionMessages(session.id)
@@ -1020,7 +1043,8 @@ export const copyMessageContent = async (content) => {
   catch (err) { Message.error('复制失败') }
 }
 
-export const scrollToBottom = () => {
+export const scrollToBottom = (force = false) => {
+  if (!force && !isAtBottom.value) return
   nextTick(() => {
     const el = messageListRef.value
     if (!el) return
@@ -1069,6 +1093,7 @@ export const handleSendMessage = async () => {
   if (!sessionKey) { Message.error('会话不存在，请重新创建'); return }
   streamingResponse.value = ''; showStreamingTools.value = false
   isThinking.value = true; isStreaming.value = true
+  isStreamingError.value = false
   scrollToBottom()
   const userMessage = { id: `user_${Date.now()}`, role: 'user', content: text, time: formatMessageTime(Date.now()) }
   messages.value.push(userMessage)
@@ -1104,9 +1129,13 @@ const _loadChatHistory = async (sessionKey) => {
   if (!sessionKey || !wsManager) { isLoadingMessages.value = false; return }
   isLoadingHistory.value = true
   let savedPendingMessages = []
+  let streamingMsg = null
   try {
     const history = await wsManager.getChatHistory(sessionKey, 50)
     savedPendingMessages = pendingMessages.value.splice(0)
+    streamingMsg = currentThinkingMsgId.value
+      ? messages.value.find(m => m.id === currentThinkingMsgId.value)
+      : null
     messages.value = []; hasMoreHistory.value = true; historyLimit.value = 50
     if (history?.messages) {
       const session = sessions.value.find(s => s.key === sessionKey)
@@ -1194,6 +1223,10 @@ const _loadChatHistory = async (sessionKey) => {
       delete sessionDraftMap[sessionKey]
     }
 
+    if (streamingMsg && streamingMsg.id && !messages.value.some(m => m.id === streamingMsg.id)) {
+      messages.value.push(streamingMsg)
+    }
+
     isLoadingMessages.value = false
     sessionStats.value = computeSessionStatsFromMessages()
     isLoadingHistory.value = false
@@ -1218,7 +1251,7 @@ const _loadChatHistory = async (sessionKey) => {
       }
     }
 
-    scrollToBottom()
+    scrollToBottom(true)
   }
 }
 
@@ -1341,7 +1374,7 @@ export function useSessionView() {
     toolExpandedMap, thinkingExpandedMap,
     currentAgentName, sessionHasMessages, currentSession, currentSessionModel, currentSessionModelName,
     filteredSessions, sortedSessions, groupedSessions,
-    streamingToolItems, streamingThinkingCount, latestThinkingMsg, parsedStreamingContent, throttledStreamingHtml,
+    streamingToolItems, streamingThinkingCount, streamingContentItems, streamingLiveText, latestThinkingMsg, parsedStreamingContent, throttledStreamingHtml,
     selectedModelName, thinkingLevelOptions, showThinkingLevelSelect,
     workspaceLabel, workspaceIsSet,
     wsConnected, groupedMessages,
