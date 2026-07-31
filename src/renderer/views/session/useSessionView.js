@@ -312,16 +312,13 @@ export const streamingLiveText = computed(() => {
   const msg = messages.value.find(m => m.id === currentThinkingMsgId.value)
   if (!streamingResponse.value) return ''
   if (!msg) return streamingResponse.value
-  const items = msg.content || []
-  let lastTextItem = null
-  for (let i = items.length - 1; i >= 0; i--) {
-    if (items[i].type === 'text') { lastTextItem = items[i]; break }
+  let totalSaved = 0
+  for (const item of (msg.content || [])) {
+    if (item.type === 'text') totalSaved += (item.text || '').length
   }
   const live = streamingResponse.value
-  if (!lastTextItem) return live
-  const saved = lastTextItem.text || ''
-  if (live.startsWith(saved)) return live.slice(saved.length)
-  return live
+  if (totalSaved < live.length) return live.slice(totalSaved)
+  return ''
 })
 
 export const latestThinkingMsg = computed(() => {

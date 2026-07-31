@@ -382,20 +382,33 @@ const handleWsMessage = (data) => {
           tokenInput: 0, tokenOutput: 0, tokenTotal: 0,
         }
 
-        // 创建流式 assistant 消息（content 数组格式，与历史一致）
-        currentThinkingMsgId.value = `streaming_${Date.now()}`
-        const streamingMsg = {
-          id: currentThinkingMsgId.value,
-          role: 'assistant',
-          content: [],
-          stopReason: null,
-          toolResults: {},
-          thinkingDone: false,
-          thinkingDuration: 0,
-          _startTime: Date.now(),
-          time: getTimeString(),
+        // 检查是否已有历史加载的未完成 assistant 消息，有则复用避免覆盖
+        const _lastMsg = messages.value[messages.value.length - 1]
+        let _reuseMsg = null
+        if (_lastMsg && _lastMsg.role === 'assistant' && _lastMsg.stopReason !== 'stop') {
+          _reuseMsg = _lastMsg
         }
-        messages.value.push(streamingMsg)
+        if (_reuseMsg) {
+          currentThinkingMsgId.value = _reuseMsg.id
+          _reuseMsg.thinkingDone = false
+          _reuseMsg.stopReason = null
+          _reuseMsg.toolResults = _reuseMsg.toolResults || {}
+          _reuseMsg._startTime = _reuseMsg._startTime || Date.now()
+        } else {
+          currentThinkingMsgId.value = `streaming_${Date.now()}`
+          const streamingMsg = {
+            id: currentThinkingMsgId.value,
+            role: 'assistant',
+            content: [],
+            stopReason: null,
+            toolResults: {},
+            thinkingDone: false,
+            thinkingDuration: 0,
+            _startTime: Date.now(),
+            time: getTimeString(),
+          }
+          messages.value.push(streamingMsg)
+        }
       } else if (phase === 'end') {
         const usage = data.payload?.data?.usage || {}
         currentRunStats.value.tokenInput = usage.input || 0
