@@ -31,6 +31,7 @@
       <div class="chat-content">
         <div class="chat-header">
           <div class="header-left">
+            <icon-loading v-if="isStreaming || isThinking" class="header-loading-icon" />
             <h3 class="chat-title">{{ currentSession ? getSessionTitle(currentSession) : '新会话' }}</h3>
             <a-tag size="small" v-if="currentSessionModel">{{ currentSessionModelName || currentSessionModel }}</a-tag>
             <span class="message-count">{{ messages.length }} 条消息</span>
@@ -74,6 +75,8 @@
             <icon-down />
           </div>
         </div>
+
+        <MessageAnchors :grouped-messages="groupedMessages" />
 
         <MessageInput
           :input-text="inputText"
@@ -141,6 +144,7 @@ import { useSessionView } from './useSessionView.js'
 
 import SessionList from './components/SessionList.vue'
 import MessageInput from './components/MessageInput.vue'
+import MessageAnchors from './components/MessageAnchors.vue'
 import RightPanel from './components/RightPanel.vue'
 import MessageHistory from './components/MessageHistory.vue'
 import ToolResultDrawer from './components/ToolResultDrawer.vue'
@@ -475,11 +479,18 @@ const handleWsMessage = (data) => {
       const delta = data.payload?.data?.delta
                  || data.payload?.delta
                  || data.payload?.deltaText
+      const fullText = data.payload?.data?.text
                  || data.payload?.text
       if (delta) {
+        isStreaming.value = true
+        isThinking.value = true
         currentThinkingBuffer += delta
         currentRunStats.value.thinkingCount++
-
+        if (!streamingResponse.value) {
+          streamingResponse.value = delta
+        } else if (!streamingResponse.value.endsWith(delta)) {
+          streamingResponse.value += delta
+        }
         nextTick(() => scrollToBottom())
       }
       return
@@ -505,7 +516,7 @@ const handleWsMessage = (data) => {
         currentRunStats.value.toolCallCount++
 
         let finalArgs = args
-        if ((!finalArgs || (typeof finalArgs === 'object' && Object.keys(finalArgs).length === 0)) && toolCallId && toolArgsCache.has(toolCallId)) {
+        if (toolCallId && toolArgsCache.has(toolCallId)) {
           finalArgs = toolArgsCache.get(toolCallId)
         }
 
@@ -615,7 +626,9 @@ const handleWsMessage = (data) => {
         }
 
         if (payload.deltaText) {
-          streamingResponse.value += payload.deltaText
+          if (!streamingResponse.value.endsWith(payload.deltaText)) {
+            streamingResponse.value += payload.deltaText
+          }
           nextTick(() => scrollToBottom())
           return
         }
@@ -624,7 +637,9 @@ const handleWsMessage = (data) => {
         if (message && message.content) {
           const textContent = message.content.find(c => c.type === 'text')
           if (textContent && textContent.text) {
-            streamingResponse.value += textContent.text
+            if (!streamingResponse.value.endsWith(textContent.text)) {
+              streamingResponse.value += textContent.text
+            }
             nextTick(() => scrollToBottom())
           }
         }
@@ -780,6 +795,7 @@ onMounted(async () => {
   await nextTick()
   syncMessageListRef()
   initSessionView()
+  nextTick(() => scrollToBottom(true))
 })
 
 onUnmounted(() => {
@@ -865,6 +881,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+.header-loading-icon {
+  font-size: 14px;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  animation: header-spin 1s linear infinite;
+}
+
+@keyframes header-spin {
+  to { transform: rotate(360deg); }
 }
 
 .chat-title {

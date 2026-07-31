@@ -305,12 +305,13 @@ export const streamingThinkingCount = computed(() => {
 export const streamingContentItems = computed(() => {
   if (!currentThinkingMsgId.value) return []
   const msg = messages.value.find(m => m.id === currentThinkingMsgId.value)
-  return msg?.content || []
+  return [...(msg?.content || [])]
 })
 
 export const streamingLiveText = computed(() => {
   const msg = messages.value.find(m => m.id === currentThinkingMsgId.value)
-  if (!msg || !streamingResponse.value) return ''
+  if (!streamingResponse.value) return ''
+  if (!msg) return streamingResponse.value
   const items = msg.content || []
   let lastTextItem = null
   for (let i = items.length - 1; i >= 0; i--) {
@@ -974,8 +975,10 @@ export const switchSessionFn = (sessionId) => {
   const oldSessionId = currentSessionId.value
   // 实时回复（尚未收到 final）期间切换会话：把当前累积的 messages 深拷贝暂存，
   // 切回来时与 server 历史合并恢复（避免"之前的回复内容丢失"）。
+  // 保存 key 与 _loadChatHistory 中恢复 key 一致：均使用 session.key
   if (oldSessionId && oldSessionId !== sessionId && (isStreaming.value || isThinking.value) && messages.value.length > 0) {
-    sessionDraftMap[oldSessionId] = JSON.parse(JSON.stringify(messages.value))
+    const oldSession = sessions.value.find(s => s.id === oldSessionId)
+    sessionDraftMap[oldSession?.key || oldSessionId] = JSON.parse(JSON.stringify(messages.value))
   }
   // 切换会话时确保模型列表是最新的；如果首次加载失败过这里会自动重试
   getModelStore().ensureLoaded()

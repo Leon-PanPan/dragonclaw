@@ -20,6 +20,7 @@
       <div
         v-if="group.item && group.item.role === 'user'"
         class="message-item user"
+        :data-msg-id="group.id"
       >
         <div class="message-content">
           <div class="message-header">
