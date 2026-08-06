@@ -459,12 +459,12 @@ It verifies, in order:
 
 ## 🗺️ Roadmap
 
-- [ ] Internationalization & multi-language UI (expected July)
-- [ ] Multi-language documentation (expected July)
-- [ ] Agent sharing (expected July)
-- [ ] Performance monitoring & crash reporting (expected July)
-- [ ] Permission controls (expected August)
-- [ ] Built-in Token-Plan (expected September)
+- [ ] Internationalization & multi-language UI (expected August)
+- [ ] Multi-language documentation (expected August)
+- [ ] Agent sharing (expected August)
+- [ ] Performance monitoring & crash reporting (expected August)
+- [ ] Permission controls (expected September)
+- [ ] Built-in Token-Plan (expected October)
 
 ---
 

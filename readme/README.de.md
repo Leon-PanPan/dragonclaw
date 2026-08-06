@@ -440,12 +440,12 @@ Es prüft der Reihe nach:
 
 ## 🗺️ Roadmap
 
-- [ ] Internationalisierung & mehrsprachige UI (erwartet im Juli)
-- [ ] Mehrsprachige Dokumentation (erwartet im Juli)
-- [ ] Agenten teilen (erwartet im Juli)
-- [ ] Performance-Monitoring & Crash-Reporting (erwartet im Juli)
-- [ ] Rechteverwaltung (erwartet im August)
-- [ ] Eingebauter Token-Plan (erwartet im September)
+- [ ] Internationalisierung & mehrsprachige UI (erwartet im August)
+- [ ] Mehrsprachige Dokumentation (erwartet im August)
+- [ ] Agenten teilen (erwartet im August)
+- [ ] Performance-Monitoring & Crash-Reporting (erwartet im August)
+- [ ] Rechteverwaltung (erwartet im September)
+- [ ] Eingebauter Token-Plan (erwartet im Oktober)
 
 ---
 
