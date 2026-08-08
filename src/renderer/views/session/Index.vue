@@ -129,6 +129,9 @@
       :current-result-status-text="currentResultStatusText"
       :current-result-thinking="currentResultThinking"
       :current-result-args="currentResultArgs"
+      :current-result-args-kind="currentResultArgsKind"
+      :current-result-args-detail="currentResultArgsDetail"
+      :current-result-args-html="currentResultArgsHtml"
       :current-result-html="currentResultHtml"
       @update:showResultDrawer="(v) => (showResultDrawer = v)"
     />
@@ -156,7 +159,7 @@ const {
   agentList, sessions, currentSessionId, childSessions, selectedSubagentKey, selectedNewSessionAgent,
   messages, hasMoreHistory, historyLimit, currentThinkingMsgId, showStreamingThinking, sessionTasks, showStreamingTools,
   showRightPanel, showResultDrawer, currentResultTitle, currentResultTool, currentResultStatus, currentResultStatusText,
-  currentResultThinking, currentResultArgs, currentResultHtml,
+  currentResultThinking, currentResultArgs, currentResultArgsKind, currentResultArgsDetail, currentResultArgsHtml, currentResultHtml,
   selectedModel, selectedThinkingLevel, inputText, streamingResponse, isStreaming, isThinking, isStreamingError, isLoadingMessages, isLoadingHistory,
   pendingMessages, sending, messageListRef,
   verboseEnabled, reasoningVisibleEnabled, isAtBottom,

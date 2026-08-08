@@ -6,6 +6,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 
 import App from './App.vue';
 import '@arco-design/web-vue/dist/arco.css';
+import 'highlight.js/styles/atom-one-dark.css';
 import './style.scss';
 import './views/computer/sub-views/css/common.scss';
 

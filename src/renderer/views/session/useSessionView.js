@@ -1,6 +1,7 @@
 import { ref, computed, reactive, watch, nextTick } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { parseMessageContent, extractTextFromContent, getTextContentFromContent, parseAssistantContent, extractThinkingFromContent } from '@/utils/messageParser'
+import { isCommandTool, extractCommand, formatArgsSummary, formatResultHtml, formatCommandHtml } from '@/utils/toolResultFormatter'
 import { wsManager, ConnectionState } from '@/core/websocket/manager'
 import { openExternal } from '@/core/ipc'
 import { useModelStore } from '@/stores/modelStore'
@@ -51,6 +52,9 @@ export const currentResultStatus = ref('')
 export const currentResultStatusText = ref('')
 export const currentResultThinking = ref('')
 export const currentResultArgs = ref('')
+export const currentResultArgsKind = ref('')
+export const currentResultArgsDetail = ref('')
+export const currentResultArgsHtml = ref('')
 export const currentResultHtml = ref('')
 
 export const selectedModel = ref('')
@@ -480,22 +484,27 @@ export const handleTimelineClick = (msg) => {
   }
   currentResultThinking.value = msg.thinkingText || ''
   currentResultArgs.value = ''
+  currentResultArgsKind.value = ''
+  currentResultArgsDetail.value = ''
+  currentResultArgsHtml.value = ''
   if (msg.args) {
     try {
       const argsObj = typeof msg.args === 'string' ? JSON.parse(msg.args) : msg.args
-      if (msg.toolName === 'write' && (argsObj.path || argsObj.file_path)) {
-        const p = argsObj.path || argsObj.file_path
-        currentResultArgs.value = JSON.stringify({ path: p, content: `[${(argsObj.content || '').length} 字符]` }, null, 2)
-      } else if (msg.toolName === 'edit' && (argsObj.path || argsObj.file_path)) {
-        const p = argsObj.path || argsObj.file_path
-        currentResultArgs.value = JSON.stringify({ path: p, old_string: argsObj.old_string, new_string: argsObj.new_string }, null, 2)
-      } else if (msg.toolName === 'read' && (argsObj.path || argsObj.file_path)) {
-        const p = argsObj.path || argsObj.file_path
-        currentResultArgs.value = JSON.stringify({ path: p, offset: argsObj.offset, limit: argsObj.limit }, null, 2)
-      } else if (msg.toolName === 'exec' && argsObj.command) {
-        currentResultArgs.value = JSON.stringify({ command: argsObj.command, workdir: argsObj.workdir || '' }, null, 2)
-      } else { currentResultArgs.value = JSON.stringify(argsObj, null, 2) }
-    } catch (e) { currentResultArgs.value = typeof msg.args === 'string' ? msg.args : JSON.stringify(msg.args) }
+      currentResultArgsDetail.value = JSON.stringify(argsObj, null, 2)
+      if (isCommandTool(msg.toolName) && extractCommand(argsObj)) {
+        const cmd = extractCommand(argsObj)
+        currentResultArgsKind.value = 'command'
+        currentResultArgs.value = cmd
+        currentResultArgsHtml.value = formatCommandHtml(cmd)
+      } else {
+        currentResultArgsKind.value = 'summary'
+        currentResultArgs.value = formatArgsSummary(msg.toolName, argsObj)
+      }
+    } catch (e) {
+      currentResultArgsKind.value = 'summary'
+      currentResultArgs.value = typeof msg.args === 'string' ? msg.args : JSON.stringify(msg.args)
+      currentResultArgsDetail.value = currentResultArgs.value
+    }
   }
   let toolResultContent = ''
   let found = !!msg.resultContent
@@ -515,7 +524,7 @@ export const handleTimelineClick = (msg) => {
       }
     }
   }
-  currentResultHtml.value = found && toolResultContent ? parseMessageContent(toolResultContent).html : ''
+  currentResultHtml.value = formatResultHtml(found ? toolResultContent : '', msg.isError)
   showResultDrawer.value = true
 }
 
@@ -1363,7 +1372,7 @@ export function useSessionView() {
     agentList, unreadCount, sessions, currentSessionId, childSessions, selectedSubagentKey, selectedNewSessionAgent,
     messages, hasMoreHistory, historyLimit, currentThinkingMsgId, showStreamingThinking, sessionTasks, showStreamingTools,
     showRightPanel, showResultDrawer, currentResultTitle, currentResultTool, currentResultStatus, currentResultStatusText,
-    currentResultThinking, currentResultArgs, currentResultHtml,
+    currentResultThinking, currentResultArgs, currentResultArgsKind, currentResultArgsDetail, currentResultArgsHtml, currentResultHtml,
     selectedModel, modelSelectorRef, selectedThinkingLevel, STORAGE_KEY_REASONING,
     workspaceInstructionPending,
     inputText, streamingResponse, isStreaming, isThinking, isStreamingError, isLoadingMessages, isLoadingHistory,
